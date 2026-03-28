@@ -302,3 +302,22 @@ hackathon/
 │               └── RiskEventRepository.java
 └── models/                           ← ML modelleri (LSTM tabanlı Güneş Fırtınası Tahmin modeli eklendi)
 ```
+
+
+yapay zeka serveriiçin gerekli kütüphhaneler:
+cd models
+pip install -r requirements.txt
+
+serverı başlatma 
+uvicorn serve:app --port 8000
+
+
+
+frontend başlatma
+cd frontend
+npm run dev
+
+
+sunucuyu çalıştır 
+cd backend
+./mvnw spring-boot:run

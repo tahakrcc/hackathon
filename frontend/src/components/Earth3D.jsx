@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 const Earth = ({ riskScore }) => {
   const earthRef = useRef();
   const cloudsRef = useRef();
-  
+
   const [map, bump, spec] = useLoader(THREE.TextureLoader, [
     '/textures/earthmap.jpg',
     '/textures/earthbump.jpg',
@@ -26,11 +26,11 @@ const Earth = ({ riskScore }) => {
     <group>
       <mesh ref={earthRef}>
         <sphereGeometry args={[2, 32, 32]} />
-        <meshPhongMaterial 
-          map={map} 
-          bumpMap={bump} 
-          bumpScale={0.06} 
-          specularMap={spec} 
+        <meshPhongMaterial
+          map={map}
+          bumpMap={bump}
+          bumpScale={0.06}
+          specularMap={spec}
           specular={new THREE.Color('#333333')}
           shininess={10}
         />
@@ -39,18 +39,17 @@ const Earth = ({ riskScore }) => {
       {/* Bulut Katmanı */}
       <mesh ref={cloudsRef} scale={[1.02, 1.02, 1.02]}>
         <sphereGeometry args={[2, 32, 32]} />
-        <meshPhongMaterial 
-          map={map} 
-          transparent 
-          opacity={0.12} 
+        <meshPhongMaterial
+          map={map}
+          transparent
+          opacity={0.12}
           depthWrite={false}
           side={THREE.DoubleSide}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
 
-      {/* Atmosfer Kalkanı */}
-      <Atmosphere scale={1.14} color={shieldColor} intensity={riskScore > 50 ? 1.6 : 1.0} riskScore={riskScore} />
+      {/* Atmosfer Kalkanı Kaldırıldı */}
     </group>
   );
 };
@@ -107,10 +106,10 @@ const Atmosphere = ({ scale, color, intensity, riskScore }) => {
 
 const Earth3D = ({ riskScore = 20, bz = 0, bt = 0 }) => {
   const isHighRisk = riskScore > 50;
-  
+
   // Koordinat Jitter Efekti (Realistik takip hissi için)
   const [coords, setCoords] = React.useState({ lat: 42.029, lon: -14.881 });
-  
+
   React.useEffect(() => {
     const timer = setInterval(() => {
       setCoords(prev => ({
@@ -124,32 +123,32 @@ const Earth3D = ({ riskScore = 20, bz = 0, bt = 0 }) => {
   return (
     <div className="w-full h-full min-h-[400px] relative group cursor-auto">
       {/* 3B CANVAS KATMANI */}
-      <Canvas 
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} 
+      <Canvas
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         dpr={[1, 1.5]}
       >
         <PerspectiveCamera makeDefault position={[0, 0, 5]} />
         <ambientLight intensity={0.4} />
         <pointLight position={[10, 10, 10]} intensity={1.5} color={isHighRisk ? "#e11d48" : "#ffffff"} />
         <pointLight position={[-10, -10, -10]} intensity={0.3} color="#38bdf8" />
-        
+
         <React.Suspense fallback={null}>
           <Earth riskScore={riskScore} />
         </React.Suspense>
-        
+
         <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.4} />
       </Canvas>
-      
+
       {/* TAKTİK HUD KATMANI - Sadece Nişangah Korundu */}
       <div className="absolute inset-0 pointer-events-none z-10 p-6 flex items-center justify-center">
         {/* Hedefleme Nişangahı */}
         <div className="relative w-80 h-80 border border-white/5 rounded-full">
-          <motion.div 
+          <motion.div
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
             className="absolute inset-0 border-t-2 border-solar-amber/30 rounded-full"
           />
-          <motion.div 
+          <motion.div
             animate={{ rotate: -360 }}
             transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
             className="absolute inset-[10px] border-b border-neon-cyan/20 rounded-full"
