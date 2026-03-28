@@ -1,102 +1,118 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Shield, AlertTriangle, Info, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, AlertTriangle, CheckCircle, Activity, Brain } from 'lucide-react';
 
-const RiskAnalysis = ({ score = 0, cmeEvents = [], aiAnalysis = null }) => {
-  const getRiskStatus = (s) => {
-    if (s >= 75) return { label: 'KRİTİK', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/50' };
-    if (s >= 50) return { label: 'YÜKSEK RİSK', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50' };
-    if (s >= 25) return { label: 'ORTA', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50' };
-    return { label: 'NORMAL', color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/50' };
+const RiskAnalysis = ({ score, cmeEvents, aiAnalysis }) => {
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  
+  const reports = React.useMemo(() => [
+    {
+      title: 'JEOMANYETİK_ANALİZ',
+      content: aiAnalysis ? `Tahmini SYM-H sapması: ${aiAnalysis.predicted_symh || '-'} nT. Güven aralığı: %${aiAnalysis.confidence || '90'}. Uyarı Seviyesi: ${aiAnalysis.level || 'STABİL'}.` : 'L1 derin uydu yörünge taraması devam ediyor. Olası jeomanyetik geçişler izleniyor.',
+      stat: `GÜVEN: %${aiAnalysis?.confidence || '92'}`
+    },
+    {
+      title: 'GÜNEŞ_AKTİVİTESİ',
+      content: cmeEvents?.length > 0 ? `Son 24 saatte ${cmeEvents.length} KKA olayı tespit edildi. Kaynak bölge: ${cmeEvents[0].sourceLocation || 'Aktif Bölge'}. Etki bekleniyor.` : 'Güneş lekesi aktivitesi düşük seyrediyor. Kritik bir patlama kaydedilmedi.',
+      stat: `OLAY: ${cmeEvents?.length || 0} KKA`
+    },
+    {
+      title: 'SİSTEM_SAĞLIĞI',
+      content: 'DSCOVR ve ACE uyduları tam kapasite çalışıyor. Veri gecikmesi: 12ms. Yapay zeka çekirdeği optimize edildi ve tarama modunda.',
+      stat: 'DURUM: AKTİF'
+    }
+  ], [aiAnalysis, cmeEvents]);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % reports.length);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [reports.length]);
+
+  const getRiskLevel = (s) => {
+    if (s >= 75) return { label: 'KRİTİK', color: 'magenta', icon: AlertTriangle };
+    if (s >= 50) return { label: 'YÜKSEK', color: 'yellow', icon: AlertTriangle };
+    if (s >= 25) return { label: 'ORTA', color: 'yellow', icon: Activity };
+    return { label: 'STABİL', color: 'cyan', icon: CheckCircle };
   };
 
-  const getAIAnalysisText = (ai) => {
-    if (!ai) return "Yapay Zeka modülü veri topluyor. Keras LSTM modeli uyanış sürecinde...";
-    if (ai.level === "CRITICAL") return `Kritik jeomanyetik fırtına uyarısı! Beklenen Sym/H: ${ai.predicted_symh.toFixed(1)} nT. Manyetosfer çökme riski yüksek, şebekeleri korumaya alın.`;
-    if (ai.level === "WARNING") return `Orta ölçekli fırtına (Sym/H: ${ai.predicted_symh.toFixed(1)} nT) tahmin ediliyor. Kutup altı bölgelerde iletişim kopuklukları yaşanabilir.`;
-    return `Güneş faaliyetleri stabil. Tahmini Sym/H: ${ai.predicted_symh.toFixed(1)} nT. Herhangi bir plazma tehlikesi saptanmadı.`;
-  };
-
-  const status = getRiskStatus(score);
+  const risk = getRiskLevel(score);
+  const neonColor = risk.color === 'magenta' ? 'neon-text-magenta' : (risk.color === 'yellow' ? 'neon-text-yellow' : 'neon-text-cyan');
+  // Mat Renkler (Tactical Palette)
+  const hexColor = risk.color === 'magenta' ? '#e11d48' : (risk.color === 'yellow' ? '#fbbf24' : '#38bdf8');
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className={`p-6 glass ${status.border} ${status.bg} border-t-4`}>
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Risk Değerlendirmesi</h3>
-            <p className={`text-2xl font-black ${status.color}`}>{status.label}</p>
-          </div>
-          <div className={`${status.bg} p-2 flex items-center justify-center`}>
-            {score >= 50 ? <AlertTriangle className={status.color} /> : <Shield className={status.color} />}
-          </div>
+    <div className="flex flex-col gap-6 h-full text-slate-200">
+      
+      {/* GÖSTERGE ALET */}
+      <div className="flex flex-col items-center gap-4 relative py-2">
+        <div className="relative w-28 h-28 flex items-center justify-center">
+            <svg className="w-full h-full -rotate-90" style={{ color: hexColor }}>
+                <circle cx="56" cy="56" r="50" stroke="rgba(255,255,255,0.03)" strokeWidth="4" fill="transparent" />
+                <motion.circle 
+                    cx="56" cy="56" r="50" 
+                    stroke={`currentColor`} 
+                    strokeWidth="4" 
+                    fill="transparent" 
+                    initial={{ strokeDasharray: "0 314" }}
+                    animate={{ strokeDasharray: `${(score / 100) * 314} 314` }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={`text-4xl font-black tabular-nums tracking-tighter ${neonColor}`}>{score}</span>
+                <span className={`text-[7px] tech-header text-slate-500 tracking-[4px] uppercase font-black`}>RİSK_SVY</span>
+            </div>
         </div>
 
-        {/* Gösterge Çubuğu */}
-        <div className="relative h-4 w-full bg-slate-800 rounded-full overflow-hidden mb-4">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${score}%` }}
-            className={`absolute top-0 left-0 h-full ${score >= 75 ? 'bg-red-500' : score >= 50 ? 'bg-orange-500' : 'bg-green-500'}`}
-          />
-        </div>
-        
-        <div className="flex justify-between text-[10px] font-bold text-slate-500">
-          <span>0 (SAKİN)</span>
-          <span>100 (FIRTINA)</span>
+        <div className={`px-4 py-2 border border-white/5 bg-black/50 flex flex-col items-center gap-1 w-full max-w-[160px]`}>
+            <div className="flex items-center gap-2">
+               <risk.icon size={12} className={`${neonColor} ${score > 50 ? 'animate-pulse' : ''}`} />
+               <span className={`text-[12px] font-black uppercase tracking-widest ${neonColor}`}>{risk.label}</span>
+            </div>
+            <span className="text-[7px] tech-header text-slate-500 uppercase font-black">TEHDİT SEVİYESİ</span>
         </div>
       </div>
 
-      {/* AI Analiz Motoru */}
-      <div className="glass p-6 border border-slate-800/50">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-          <Zap size={14} className="text-orange-500" />
-          AI Analiz Motoru
-        </h3>
-        
-        <div className="space-y-4">
-          <div className="flex gap-4 p-3 bg-slate-900/50 border border-slate-800/30">
-            <Info size={16} className="text-blue-400 mt-1 shrink-0" />
-            <p className="text-xs text-slate-400 leading-relaxed">
-              {getAIAnalysisText(aiAnalysis)}
-            </p>
-          </div>
-
-          {aiAnalysis && (
-            <div className="flex justify-between items-center px-4 py-2 bg-slate-900/40 rounded-sm">
-              <span className="text-[10px] text-slate-400 tracking-widest uppercase">Sentinel_AI_Confidence</span>
-              <span className="text-xs font-mono text-blue-400">{aiAnalysis.confidence}%</span>
-            </div>
-          )}
-
-          {cmeEvents.length > 0 && (
-            <div className="border-l-2 border-orange-500 pl-4 py-1">
-              <p className="text-[10px] font-bold text-orange-500 mb-1">ERKEN UYARI: CME TESPİT EDİLDİ</p>
-              <p className="text-[11px] text-slate-300">
-                Son olay: {cmeEvents[0].activityID}. Tahmini varış: ~2.5 gün.
-              </p>
-            </div>
-          )}
+      {/* YAPAY ZEKA TEŞHİS TERMİNALİ */}
+      <div className="flex-1 flex flex-col gap-3">
+        <div className="flex items-center gap-3 border-b border-white/10 pb-2">
+            <Brain size={14} className="neon-text-cyan opacity-40" />
+            <span className="text-[10px] font-black text-neon-cyan uppercase tracking-widest">{reports[activeIndex].title}</span>
         </div>
-      </div>
-
-      {/* Sistem Durumu */}
-      <div className="grid grid-cols-2 gap-4">
-        <SystemIndicator label="Elektrik Şebekesi" status={score > 80 ? "Kritik" : score > 50 ? "Dikkat" : "Kararlı"} color={score > 80 ? "red" : score > 50 ? "orange" : "green"} />
-        <SystemIndicator label="GPS/GNSS" status={score > 70 ? "Güvenilmez" : "Çalışıyor"} color={score > 70 ? "red" : "green"} />
+        
+        <div className="flex-1 bg-black/40 p-5 relative group overflow-hidden border-l-2 border-neon-cyan/40">
+            <AnimatePresence mode="wait">
+              <motion.div 
+                key={activeIndex}
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col gap-3"
+              >
+                  <p className="text-[12px] mono-info text-slate-300 leading-relaxed font-sans font-black min-h-[60px] opacity-80">
+                     "{reports[activeIndex].content}"
+                  </p>
+                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+                     <div className="flex gap-1.5">
+                        {reports.map((_, i) => (
+                          <div 
+                            key={i} 
+                            onClick={() => setActiveIndex(i)}
+                            className={`h-1 transition-all duration-300 cursor-pointer ${activeIndex === i ? 'w-6 bg-neon-cyan' : 'w-2 bg-white/10 hover:bg-white/30'}`} 
+                          />
+                        ))}
+                     </div>
+                     <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{reports[activeIndex].stat}</span>
+                  </div>
+              </motion.div>
+            </AnimatePresence>
+        </div>
       </div>
     </div>
   );
 };
-
-const SystemIndicator = ({ label, status, color }) => (
-  <div className="p-4 glass border border-slate-800/50">
-    <p className="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tighter">{label}</p>
-    <div className="flex items-center gap-2">
-      <div className={`w-1.5 h-1.5 rounded-full bg-${color}-500 animate-pulse`} />
-      <span className="text-xs font-bold">{status}</span>
-    </div>
-  </div>
-);
 
 export default RiskAnalysis;

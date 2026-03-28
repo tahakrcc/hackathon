@@ -2,8 +2,11 @@ import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
+import { motion } from 'framer-motion';
 
-const Sun3D = ({ riskScore = 20 }) => {
+const Sun3D = ({ riskScore = 20, xray = '--', windSpeed = '--' }) => {
+  const sunRef = useRef();
+  
   const starVertexShader = `
     varying vec2 vUv;
     varying vec3 vPosition;
@@ -72,58 +75,104 @@ const Sun3D = ({ riskScore = 20 }) => {
     float fbm(vec3 p) {
       float v = 0.0;
       float a = 0.5;
-      for (int i = 0; i < 6; i++) {
+      for (int i = 0; i < 4; i++) {
         v += a * snoise(p);
-        p = p * 2.0 + vec3(100.0);
+        p = p * 2.5 + vec3(100.0);
         a *= 0.5;
       }
       return v;
     }
 
     void main() {
-      vec3 p = vPosition * 2.0;
-      float noise = fbm(p + uTime * (0.12 * uTurbulence));
-      float warp = fbm(p + noise + uTime * (0.08 * uTurbulence));
-      vec3 color = mix(uColor1, uColor2, warp * 1.5);
+      vec3 p = vPosition * 2.5;
+      float noise = fbm(p + uTime * (0.2 * uTurbulence));
+      float warp = fbm(p + noise + uTime * (0.15 * uTurbulence));
+      
+      // HEATMAP COLORS
+      vec3 color = mix(uColor1, uColor2, warp * 2.0);
+      
+      // Atmospheric brightness
       float viewDot = dot(vNormal, normalize(cameraPosition - vPosition));
-      float fresnel = pow(1.0 - max(0.0, viewDot), 3.0);
-      color += uColor2 * fresnel * 2.0;
+      float fresnel = pow(1.0 - max(0.0, viewDot), 4.0);
+      color += uColor2 * fresnel * 3.0;
+      
+      // Brightness boost based on turbulence
+      color *= 1.2 + (uTurbulence * 0.1);
+      
       gl_FragColor = vec4(color, 1.0);
     }
   `;
 
   const sunUniforms = useMemo(() => ({
     uTime: { value: 0 },
-    uColor1: { value: new THREE.Color("#ff3300") },
-    uColor2: { value: new THREE.Color("#ffaa00") },
-    uTurbulence: { value: 1.0 },
+    uColor1: { value: new THREE.Color("#fbbf24") }, // Muted Amber
+    uColor2: { value: new THREE.Color("#f59e0b") }, // Deep Orange/Amber
+    uTurbulence: { value: 0.8 },
   }), []);
 
   return (
-    <div className="w-full h-full bg-[#05070a]">
+    <div className="w-full h-full relative group">
       <Canvas 
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        dpr={[1, 2]}
-        camera={{ position: [0, 0, 10], fov: 30 }}
+        dpr={[1, 1.5]}
+        camera={{ position: [0, 0, 8], fov: 35 }}
       >
-        <color attach="background" args={['#05070a']} />
-        
-        <mesh>
-          <sphereGeometry args={[2, 128, 128]} />
+        <mesh ref={sunRef}>
+          <sphereGeometry args={[2.2, 64, 64]} />
           <shaderMaterial 
             vertexShader={starVertexShader} 
             fragmentShader={starFragmentShader} 
             uniforms={sunUniforms} 
-            transparent
           />
           <SunAnimationProxy riskScore={riskScore} />
         </mesh>
 
-        {/* Subtle Glow - and separate from the body to avoid rectangle cutout look */}
-        <Atmosphere scale={1.2} color="#ff3300" intensity={0.5} />
+        {/* Multi-Layer Dynamic Glow / Corona - Removed outer rings per user request */}
+        <Atmosphere scale={1.12} color="#fbbf24" intensity={0.3} pulse={true} />
         
-        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1.0} />
+        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.8} />
       </Canvas>
+
+      {/* SOLAR TACTICAL HUD */}
+      <div className="absolute inset-0 pointer-events-none z-10 p-6">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] border border-white/5 rounded-full">
+          <motion.div 
+            animate={{ rotate: -360 }}
+            transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
+            className="absolute inset-[-20px] border border-neon-cyan/10 rounded-full border-dashed"
+          />
+        </div>
+
+        {/* Telemetry Labels */}
+        <div className="absolute top-10 left-10 flex flex-col gap-1">
+          <span className="text-[8px] tech-header text-solar-amber animate-pulse font-black">AKTİF_TARAMA</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] tech-header text-slate-300">X-IŞINI:</span>
+            <span className="text-[12px] font-black neon-text-yellow">{xray}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] tech-header text-slate-300">RÜZGAR:</span>
+            <span className="text-[12px] font-black neon-text-yellow">{windSpeed !== '--' ? `${windSpeed} km/s` : '--'}</span>
+          </div>
+        </div>
+
+        <div className="absolute bottom-10 right-10 flex flex-col items-end gap-1">
+          <p className="text-[9px] tech-header text-slate-500 uppercase tracking-widest">GÜNEŞ_SENSÖRÜ_SOHO</p>
+          <div className="flex items-center gap-4">
+             <div className="flex gap-1">
+                {[...Array(4)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ opacity: [0.2, 1, 0.2] }}
+                    transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
+                    className="w-1 h-3 bg-neon-cyan/40"
+                  />
+                ))}
+             </div>
+             <span className="text-[11px] font-black tracking-widest tech-header neon-text-yellow">L1_DÜĞÜM_VERİSİ</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -134,7 +183,7 @@ const SunAnimationProxy = ({ riskScore }) => {
       if (obj.isMesh && obj.material?.uniforms?.uTime) {
         obj.material.uniforms.uTime.value = state.clock.elapsedTime;
         if (obj.material.uniforms.uTurbulence) {
-           obj.material.uniforms.uTurbulence.value = 1.0 + (riskScore / 50.0);
+           obj.material.uniforms.uTurbulence.value = 1.0 + (riskScore / 30.0);
         }
       }
     });
@@ -142,15 +191,27 @@ const SunAnimationProxy = ({ riskScore }) => {
   return null;
 };
 
-const Atmosphere = ({ scale, color, intensity }) => {
+const Atmosphere = ({ scale, color, intensity, pulse = false, speed = 1.0 }) => {
+  const meshRef = useRef();
   const uniforms = useMemo(() => ({
     uColor: { value: new THREE.Color(color) },
     uIntensity: { value: intensity },
+    uTime: { value: 0 }
   }), [color, intensity]);
 
+  useFrame((state) => {
+    if (meshRef.current) {
+        const t = state.clock.elapsedTime * speed;
+        if (pulse) {
+            const p = 1.0 + Math.sin(t * 2.0) * 0.05;
+            meshRef.current.scale.setScalar(scale * p);
+        }
+    }
+  });
+
   return (
-    <mesh scale={scale}>
-      <sphereGeometry args={[2, 64, 64]} />
+    <mesh ref={meshRef} scale={scale}>
+      <sphereGeometry args={[2.2, 32, 32]} />
       <shaderMaterial
         vertexShader={`
           varying vec3 vNormal;
@@ -168,7 +229,7 @@ const Atmosphere = ({ scale, color, intensity }) => {
           varying vec3 vWorldPosition;
           void main() {
             float rim = 1.0 - max(0.0, dot(vNormal, normalize(cameraPosition - vWorldPosition)));
-            gl_FragColor = vec4(uColor * pow(rim, 6.0) * uIntensity, pow(rim, 4.0) * uIntensity);
+            gl_FragColor = vec4(uColor * pow(rim, 6.0) * uIntensity * 2.0, pow(rim, 4.0) * uIntensity);
           }
         `}
         uniforms={uniforms}

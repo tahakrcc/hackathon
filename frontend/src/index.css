@@ -1,194 +1,128 @@
 @import "tailwindcss";
 
-:root {
-  --orange-500: #f97316;
-  --slate-200: #e2e8f0;
-  --slate-300: #cbd5e1;
-  --slate-400: #94a3b8;
-  --slate-500: #64748b;
-  --slate-800: #1e293b;
-  --slate-900: #0f172a;
+@theme {
+  --font-sans: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-tech: 'Orbitron', sans-serif;
+  --font-cyber: 'Space Grotesk', sans-serif;
+
+  --color-cyber-bg: #0b0e14;
+  --color-cyber-panel: rgba(15, 23, 42, 0.7);
+  
+  --color-neon-cyan: #38bdf8;
+  --color-neon-magenta: #e11d48;
+  --color-neon-yellow: #fbbf24;
+  --color-neon-green: #10b981;
+  --color-neon-purple: #818cf8;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  scroll-behavior: smooth;
+@layer base {
+  body {
+    background-color: var(--color-cyber-bg);
+    color: #f1f5f9; /* Slate-100 for high readability without glare */
+    overflow: hidden;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: rgba(56, 189, 248, 0.2);
+    color: white;
+  }
+
+  /* Custom Muted Scrollbar */
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.1);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.3);
+  }
 }
 
-body {
-  background-color: #05070a;
-  background-image: 
-    radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.02) 0%, transparent 80%),
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-  color: var(--slate-200);
-  overflow: hidden;
-  font-family: 'Outfit', sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+@layer components {
+  /* TACTICAL PANEL ARCHITECTURE */
+  .cyber-panel {
+    position: relative;
+    background-color: var(--color-cyber-panel);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    /* Classic HUD Cut */
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 15px),
+      calc(100% - 15px) 100%,
+      0 100%
+    );
+    @apply shadow-none;
+  }
 
-/* Snap Layout System V4.0 */
-.snap-container {
-  height: 100vh;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  scroll-padding-top: 80px; /* Navbar height h-20 */
-}
+  /* TACTICAL TEXT - NO GLOW */
+  .neon-text-cyan {
+    color: var(--color-neon-cyan);
+    @apply text-shadow-none;
+  }
 
-.snap-section {
-  height: 100vh;
-  width: 100%;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  position: relative;
-  overflow: hidden;
-}
+  .neon-text-magenta {
+    color: var(--color-neon-magenta);
+    @apply text-shadow-none;
+  }
 
-/* Consistent Centering Container */
-.section-content {
-  max-width: 90rem; /* Increased to 1440px for better breathing room */
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-  height: 100%;
-  padding: 2rem;
-  position: relative;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Robust vertical centering */
-}
+  .neon-text-yellow {
+    color: var(--color-neon-yellow);
+    @apply text-shadow-none;
+  }
 
-/* Glassmorphism V4.0 - Ultra Sharp */
-.glass {
-  background: rgba(8, 12, 20, 0.7);
-  backdrop-filter: blur(25px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.8);
-  position: relative;
-}
+  /* SUBTITLES AND READABILITY */
+  .tech-header {
+    font-family: var(--font-tech);
+    @apply uppercase tracking-[0.2em] text-[9px] font-black;
+  }
 
-.glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(255, 255, 255, 0.02) 50%);
-  background-size: 100% 4px;
-  pointer-events: none;
-  opacity: 0.3;
-}
+  .mono-info {
+    font-family: var(--font-mono);
+    @apply text-[9px] tracking-wider font-bold text-slate-500;
+  }
 
-.glass-header {
-  background: linear-gradient(180deg, rgba(8, 12, 20, 0.8) 0%, rgba(8, 12, 20, 0.4) 100%);
-  backdrop-filter: blur(30px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
+  /* PAGE TRANSITIONS & SNAPS */
+  .snap-container {
+    @apply h-screen overflow-y-auto relative z-10;
+    scroll-behavior: smooth;
+  }
+  .snap-container::-webkit-scrollbar { display: none; }
 
-/* Typography V4.0 */
-.tech-header {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-}
+  .snap-section {
+    @apply min-h-screen w-full relative overflow-hidden flex flex-col;
+  }
 
-.mono-info {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-}
+  .section-content {
+    @apply container mx-auto px-6 lg:px-12 py-12 flex-1 relative z-10 flex flex-col justify-center;
+  }
 
-/* Background Layers */
-.background-canvas {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(circle at center, transparent 0%, rgba(5, 7, 10, 0.4) 100%);
-}
+  /* HUD INFRASTRUCTURE - MINIMAL SCANLINES */
+  #cyber-scanlines {
+    @apply fixed inset-0 pointer-events-none z-[9999];
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%);
+    background-size: 100% 4px;
+    opacity: 0.02;
+  }
 
-#hud-vignette {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 150%);
-  pointer-events: none;
-  z-index: 1000;
-}
+  .cyber-vignette {
+    @apply fixed inset-0 pointer-events-none z-[9998];
+    background: 
+      radial-gradient(circle at center, transparent 0%, rgba(11, 14, 20, 0.4) 100%);
+  }
 
-#hud-scanlines {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
-  background-size: 100% 4px;
-  pointer-events: none;
-  z-index: 1001;
-  opacity: 0.1;
-}
-
-/* HUD Metadata Utilities - Unified */
-.hud-bracket-l, .hud-bracket-r {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 15px;
-  border-top: 1px solid rgba(249, 115, 22, 0.4);
-  border-bottom: 1px solid rgba(249, 115, 22, 0.4);
-  opacity: 0.5;
-}
-.hud-bracket-l { left: -30px; border-left: 1px solid rgba(249, 115, 22, 0.4); }
-.hud-bracket-r { right: -30px; border-right: 1px solid rgba(249, 115, 22, 0.4); }
-
-.hud-scanner {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.4), transparent);
-  opacity: 0.15;
-  animation: scan-line 5s linear infinite;
-  z-index: 501;
-  pointer-events: none;
-}
-
-@keyframes scan-line {
-  0% { transform: translateY(-30vh); }
-  100% { transform: translateY(130vh); }
-}
-
-.glow-text {
-  text-shadow: 0 0 15px rgba(251, 146, 60, 0.3);
-}
-
-.glow-orange {
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
-}
-
-/* Custom Utilities */
-.vertical-text {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Animations */
-@keyframes pulse-slow {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.05); }
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 4s infinite ease-in-out;
+  .cyber-header-dock {
+    @apply fixed top-0 left-0 w-full z-[2000] px-8 h-20 flex flex-row items-center justify-between;
+    background: linear-gradient(180deg, rgba(3, 3, 8, 0.95) 0%, rgba(3, 3, 8, 0) 100%);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+  }
 }

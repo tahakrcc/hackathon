@@ -1,62 +1,75 @@
-import React, { useMemo, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-
-const Stars = ({ count = 5000 }) => {
-  const points = useRef();
-
-  const [positions, sizes] = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    const s = new Float32Array(count);
-    for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 100;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 100;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 100;
-      s[i] = Math.random() * 2;
-    }
-    return [pos, s];
-  }, [count]);
-
-  useFrame((state) => {
-    points.current.rotation.y += 0.0001;
-    points.current.rotation.x += 0.00005;
-  });
-
-  return (
-    <points ref={points}>
-      <bufferGeometry>
-        <bufferAttribute 
-          attach="attributes-position" 
-          count={count} 
-          array={positions} 
-          itemSize={3} 
-        />
-        <bufferAttribute 
-          attach="attributes-size" 
-          count={count} 
-          array={sizes} 
-          itemSize={1} 
-        />
-      </bufferGeometry>
-      <pointsMaterial 
-        size={0.05} 
-        color="#ffffff" 
-        transparent 
-        opacity={0.3} 
-        sizeAttenuation 
-      />
-    </points>
-  );
-};
+import React, { useRef, useEffect } from 'react';
 
 const StarfieldBackground = () => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId;
+    const stars = [];
+    const STAR_COUNT = 800;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Generate stars
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.5 + 0.3,
+        opacity: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 0.02 + 0.005,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+
+    const draw = (time) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const star of stars) {
+        const flicker = Math.sin(time * 0.001 * star.speed * 10 + star.phase) * 0.15 + 0.85;
+        ctx.globalAlpha = star.opacity * flicker;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Slow drift
+      for (const star of stars) {
+        star.y += star.speed;
+        star.x += star.speed * 0.3;
+        if (star.y > canvas.height) { star.y = 0; star.x = Math.random() * canvas.width; }
+        if (star.x > canvas.width) { star.x = 0; }
+      }
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    animId = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none bg-[#05070a]">
-      <Canvas camera={{ position: [0, 0, 50] }}>
-        <Stars />
-        <ambientLight intensity={0.5} />
-      </Canvas>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 z-0 pointer-events-none"
+      style={{ background: 'transparent' }}
+    />
   );
 };
 

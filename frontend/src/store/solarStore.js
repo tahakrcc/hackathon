@@ -20,6 +20,7 @@ export const useSolarStore = create((set, get) => ({
   cmeEvents: [],
   sunImage: '',
   riskScore: 0,
+  riskData: null,   // Full risk object: { score, level, description, timestamp }
   aiAnalysis: null,
   loading: false,
   error: null,
@@ -28,7 +29,6 @@ export const useSolarStore = create((set, get) => ({
   updateData: async () => {
     set({ loading: true });
     try {
-      // Fetch data in parallel from the local backend proxy
       const results = await Promise.allSettled([
         fetchHelioviewerImage(),
         fetchXRayFlux(),
@@ -53,26 +53,25 @@ export const useSolarStore = create((set, get) => ({
         aiAnalysisData
       ] = results.map(r => r.status === 'fulfilled' ? r.value : null);
 
-      // Determine risk score from the backend payload
-      // Spring backend returns { score, level, description, timestamp }
       const riskScore = riskScoreData?.score || 10;
 
       set({ 
         sunImage: typeof sunImage === 'string' ? sunImage : get().sunImage, 
-        xrayFlux, 
-        solarWind, 
-        solarMag, 
+        xrayFlux: xrayFlux || [], 
+        solarWind: solarWind || [], 
+        solarMag: solarMag || [], 
         kpIndex: kpIndex || [], 
         auroraData, 
         cmeEvents: cmeEvents || [], 
         riskScore,
+        riskData: riskScoreData || null,
         aiAnalysis: aiAnalysisData,
         lastUpdate: new Date(),
         loading: false 
       });
     } catch (err) {
       set({ error: err.message, loading: false });
-      console.error("Store update failed:", err);
+      console.error("Store güncelleme başarısız:", err);
     }
   }
 }));

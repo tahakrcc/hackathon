@@ -8,7 +8,6 @@ const Earth = ({ riskScore }) => {
   const earthRef = useRef();
   const cloudsRef = useRef();
   
-  // Use only local textures that we know exist
   const [map, bump, spec] = useLoader(THREE.TextureLoader, [
     '/textures/earthmap.jpg',
     '/textures/earthbump.jpg',
@@ -16,42 +15,42 @@ const Earth = ({ riskScore }) => {
   ]);
 
   useFrame((state, delta) => {
-    if (earthRef.current) earthRef.current.rotation.y += delta * 0.05;
-    if (cloudsRef.current) cloudsRef.current.rotation.y += delta * 0.07;
+    if (earthRef.current) earthRef.current.rotation.y += delta * 0.04;
+    if (cloudsRef.current) cloudsRef.current.rotation.y += delta * 0.055;
   });
 
-  // Dynamic color based on risk
-  const shieldColor = riskScore > 70 ? '#f97316' : (riskScore > 35 ? '#3b82f6' : '#4ade80');
+  // Riske göre dinamik renk (Göz Dostu Palet)
+  const shieldColor = riskScore > 70 ? '#e11d48' : (riskScore > 35 ? '#fbbf24' : '#38bdf8');
 
   return (
     <group>
       <mesh ref={earthRef}>
-        <sphereGeometry args={[2, 64, 64]} />
+        <sphereGeometry args={[2, 32, 32]} />
         <meshPhongMaterial 
           map={map} 
           bumpMap={bump} 
-          bumpScale={0.05} 
+          bumpScale={0.06} 
           specularMap={spec} 
-          specular={new THREE.Color('grey')}
-          shininess={5}
+          specular={new THREE.Color('#333333')}
+          shininess={10}
         />
       </mesh>
 
-      {/* Cloud Layer */}
+      {/* Bulut Katmanı */}
       <mesh ref={cloudsRef} scale={[1.02, 1.02, 1.02]}>
-        <sphereGeometry args={[2, 64, 64]} />
+        <sphereGeometry args={[2, 32, 32]} />
         <meshPhongMaterial 
           map={map} 
           transparent 
-          opacity={0.15} 
+          opacity={0.12} 
           depthWrite={false}
           side={THREE.DoubleSide}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
 
-      {/* Atmospheric Glow (Rim) - Dynamic Shield */}
-      <Atmosphere scale={1.15} color={shieldColor} intensity={riskScore > 50 ? 1.8 : 1.0} riskScore={riskScore} />
+      {/* Atmosfer Kalkanı */}
+      <Atmosphere scale={1.14} color={shieldColor} intensity={riskScore > 50 ? 1.6 : 1.0} riskScore={riskScore} />
     </group>
   );
 };
@@ -70,7 +69,7 @@ const Atmosphere = ({ scale, color, intensity, riskScore }) => {
 
   return (
     <mesh scale={scale}>
-      <sphereGeometry args={[2, 64, 64]} />
+      <sphereGeometry args={[2, 24, 24]} />
       <shaderMaterial
         vertexShader={`
           varying vec3 vNormal;
@@ -90,9 +89,9 @@ const Atmosphere = ({ scale, color, intensity, riskScore }) => {
           varying vec3 vWorldPosition;
           void main() {
             float rim = 1.0 - max(0.0, dot(vNormal, normalize(cameraPosition - vWorldPosition)));
-            float pulse = 0.8 + 0.2 * sin(uTime * (1.0 + uRisk * 5.0));
-            // Power of 12.0 for a significantly thinner, more professional edge
-            float alpha = pow(rim, 12.0) * uIntensity * pulse;
+            float pulse = 0.85 + 0.15 * sin(uTime * (1.5 + uRisk * 6.0));
+            // Elite Thin Edge Pro Shader
+            float alpha = pow(rim, 14.0) * uIntensity * pulse;
             gl_FragColor = vec4(uColor, alpha);
           }
         `}
@@ -106,57 +105,55 @@ const Atmosphere = ({ scale, color, intensity, riskScore }) => {
   );
 };
 
-const Earth3D = ({ riskScore = 20 }) => {
+const Earth3D = ({ riskScore = 20, bz = 0, bt = 0 }) => {
   const isHighRisk = riskScore > 50;
   
+  // Koordinat Jitter Efekti (Realistik takip hissi için)
+  const [coords, setCoords] = React.useState({ lat: 42.029, lon: -14.881 });
+  
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCoords(prev => ({
+        lat: prev.lat + (Math.random() - 0.5) * 0.001,
+        lon: prev.lon + (Math.random() - 0.5) * 0.001
+      }));
+    }, 150);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <div className="w-full h-full min-h-[300px] relative group">
-      {/* 3D CANVAS LAYER */}
+    <div className="w-full h-full min-h-[400px] relative group cursor-auto">
+      {/* 3B CANVAS KATMANI */}
       <Canvas 
-        gl={{ antialias: true, alpha: true }} 
-        onCreated={({ gl }) => {
-          gl.setClearColor(new THREE.Color('#000000'), 0);
-        }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} 
+        dpr={[1, 1.5]}
       >
         <PerspectiveCamera makeDefault position={[0, 0, 5]} />
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={2} color={isHighRisk ? "#f97316" : "#ffffff"} />
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 10, 10]} intensity={1.5} color={isHighRisk ? "#e11d48" : "#ffffff"} />
+        <pointLight position={[-10, -10, -10]} intensity={0.3} color="#38bdf8" />
         
         <React.Suspense fallback={null}>
           <Earth riskScore={riskScore} />
         </React.Suspense>
         
-        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
+        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.4} />
       </Canvas>
       
-      {/* TACTICAL HUD OVERLAY */}
-      <div className="absolute inset-0 pointer-events-none z-10">
-        {/* Targeting Reticle */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-blue-500/10 rounded-full">
+      {/* TAKTİK HUD KATMANI - Sadece Nişangah Korundu */}
+      <div className="absolute inset-0 pointer-events-none z-10 p-6 flex items-center justify-center">
+        {/* Hedefleme Nişangahı */}
+        <div className="relative w-80 h-80 border border-white/5 rounded-full">
           <motion.div 
             animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-            className="absolute inset-0 border-t-2 border-blue-500/40 rounded-full"
+            transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+            className="absolute inset-0 border-t-2 border-solar-amber/30 rounded-full"
           />
-        </div>
-
-        {/* Scanning Axis */}
-        <div className="absolute top-0 left-1/2 w-[1px] h-full bg-gradient-to-b from-transparent via-blue-500/10 to-transparent" />
-        <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/10 to-transparent" />
-
-        {/* Coordinate Markers */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <div className="w-1 h-1 bg-blue-500 mb-1" />
-            <span className="text-[6px] tech-header text-blue-500/40 uppercase tracking-[3px]">N_POLE_AXIS</span>
-        </div>
-        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <span className="text-[6px] tech-header text-blue-500/40 uppercase tracking-[3px] mb-1">S_POLE_AXIS</span>
-            <div className="w-1 h-1 bg-blue-500" />
-        </div>
-
-        {/* Shield Sync Data */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-4 py-1 border border-blue-500/20">
-           <p className="text-[7px] tech-header text-blue-400 tracking-[5px] animate-pulse">SHIELD_SYNC: 100%</p>
+          <motion.div 
+            animate={{ rotate: -360 }}
+            transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+            className="absolute inset-[10px] border-b border-neon-cyan/20 rounded-full"
+          />
         </div>
       </div>
     </div>
