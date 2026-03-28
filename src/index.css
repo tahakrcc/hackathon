@@ -36,12 +36,27 @@ body {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
 }
 
-.glow-orange { filter: drop-shadow(0 0 8px var(--accent-orange)); }
-.glow-green { filter: drop-shadow(0 0 8px var(--accent-green)); }
+.glow-orange { filter: drop-shadow(0 0 10px rgba(255, 171, 64, 0.4)); }
+.glow-green { filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.4)); }
+.glow-red { filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.5)); }
+
+.bg-scanline {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.1) 50%
+  ),
+  linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.02),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.02)
+  );
+  background-size: 100% 2px, 3px 100%;
+}
 
 @keyframes pulse {
   0% { transform: scale(1); opacity: 0.8; }
@@ -53,36 +68,27 @@ body {
   animation: pulse 4s infinite ease-in-out;
 }
 
-.risk-level {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-radius: 99px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  letter-spacing: 0.5px;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.risk-label {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #05070a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.2);
+  background: #1e293b;
   border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
 }
