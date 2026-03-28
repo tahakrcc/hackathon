@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { format } from 'date-fns';
 
-const NASA_DEMO_KEY = 'DEMO_KEY';
+const NASA_API_KEY = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
 
 // Utility to parse NOAA Array-of-Arrays format
 const parseNoaaArray = (data) => {
@@ -84,7 +84,7 @@ export const fetchCMEEvents = async () => {
     // DONKI CME endpoint with date range (last 7 days)
     const startDate = format(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
     const endDate = format(new Date(), 'yyyy-MM-dd');
-    const response = await axios.get(`https://api.nasa.gov/DONKI/CME?startDate=${startDate}&endDate=${endDate}&api_key=${NASA_DEMO_KEY}`);
+    const response = await axios.get(`https://api.nasa.gov/DONKI/CME?startDate=${startDate}&endDate=${endDate}&api_key=${NASA_API_KEY}`);
     return Array.isArray(response.data) ? response.data.slice(-10) : [];
   } catch (error) {
     console.error('Error fetching CME Events:', error);

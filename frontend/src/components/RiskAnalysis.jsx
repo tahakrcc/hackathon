@@ -1,13 +1,20 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, AlertTriangle, Info, Zap, Settings, HelpCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Shield, AlertTriangle, Info, Zap } from 'lucide-react';
 
 const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
   const getRiskStatus = (s) => {
-    if (s >= 75) return { label: 'CRITICAL', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/50' };
-    if (s >= 50) return { label: 'HIGH RISK', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50' };
-    if (s >= 25) return { label: 'MODERATE', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50' };
-    return { label: 'NOMINAL', color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/50' };
+    if (s >= 75) return { label: 'KRİTİK', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/50' };
+    if (s >= 50) return { label: 'YÜKSEK RİSK', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50' };
+    if (s >= 25) return { label: 'ORTA', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50' };
+    return { label: 'NORMAL', color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/50' };
+  };
+
+  const getAIAnalysis = (s) => {
+    if (s > 75) return "Kritik jeomanyetik bozulma tespit edildi. Manyetosfer sıkışması 4-8 saat içinde bekleniyor. Kutup ışığı yüksek enlemlerde görülebilir.";
+    if (s > 60) return "L1 noktasında jeomanyetik bozulma doğrulandı. Manyetosfer sıkışması 4-8 saat içinde bekleniyor.";
+    if (s > 40) return "Güneş rüzgarı parametrelerinde artış gözlemleniyor. Durumu izlemeye devam ediyoruz.";
+    return "Güneş rüzgarı parametreleri kararlı. Carrington sınıfı olay tehdidi tespit edilmedi.";
   };
 
   const status = getRiskStatus(score);
@@ -17,7 +24,7 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
       <div className={`p-6 rounded-2xl glass ${status.border} ${status.bg} border-t-4`}>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Risk Assessment</h3>
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Risk Değerlendirmesi</h3>
             <p className={`text-2xl font-black ${status.color}`}>{status.label}</p>
           </div>
           <div className={`${status.bg} p-2 rounded-lg`}>
@@ -25,7 +32,7 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
           </div>
         </div>
 
-        {/* Gauge Visualization */}
+        {/* Gösterge Çubuğu */}
         <div className="relative h-4 w-full bg-slate-800 rounded-full overflow-hidden mb-4">
           <motion.div 
             initial={{ width: 0 }}
@@ -35,43 +42,41 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
         </div>
         
         <div className="flex justify-between text-[10px] font-bold text-slate-500">
-          <span>0 (QUIET)</span>
-          <span>100 (STORM)</span>
+          <span>0 (SAKİN)</span>
+          <span>100 (FIRTINA)</span>
         </div>
       </div>
 
-      {/* AI AI Insights */}
+      {/* AI Analiz Motoru */}
       <div className="glass p-6 rounded-2xl border border-slate-800/50">
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
           <Zap size={14} className="text-orange-500" />
-          AI Analysis Engine
+          AI Analiz Motoru
         </h3>
         
         <div className="space-y-4">
           <div className="flex gap-4 p-3 rounded-xl bg-slate-900/50 border border-slate-800/30">
-            <Info size={16} className="text-blue-400 mt-1" />
+            <Info size={16} className="text-blue-400 mt-1 shrink-0" />
             <p className="text-xs text-slate-400 leading-relaxed">
-              {score > 60 
-                ? "Geomagnetic disturbance confirmed at L1. Magnetosphere compression expected within 4-8 hours."
-                : "Solar wind parameters remain stable. No immediate threat of Carrington-class events detected."}
+              {getAIAnalysis(score)}
             </p>
           </div>
 
           {cmeEvents.length > 0 && (
             <div className="border-l-2 border-orange-500 pl-4 py-1">
-              <p className="text-[10px] font-bold text-orange-500 mb-1">EARLY WARNING: CME DETECTED</p>
+              <p className="text-[10px] font-bold text-orange-500 mb-1">ERKEN UYARI: CME TESPİT EDİLDİ</p>
               <p className="text-[11px] text-slate-300">
-                Latest event ID: {cmeEvents[0].activityID}. ETA: ~2.5 days.
+                Son olay: {cmeEvents[0].activityID}. Tahmini varış: ~2.5 gün.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Systems Status */}
+      {/* Sistem Durumu */}
       <div className="grid grid-cols-2 gap-4">
-        <SystemIndicator label="Power Grid" status={score > 80 ? "Critical" : score > 50 ? "Caution" : "Stable"} color={score > 80 ? "red" : score > 50 ? "orange" : "green"} />
-        <SystemIndicator label="GPS/GNSS" status={score > 70 ? "Unreliable" : "Operational"} color={score > 70 ? "red" : "green"} />
+        <SystemIndicator label="Elektrik Şebekesi" status={score > 80 ? "Kritik" : score > 50 ? "Dikkat" : "Kararlı"} color={score > 80 ? "red" : score > 50 ? "orange" : "green"} />
+        <SystemIndicator label="GPS/GNSS" status={score > 70 ? "Güvenilmez" : "Çalışıyor"} color={score > 70 ? "red" : "green"} />
       </div>
     </div>
   );

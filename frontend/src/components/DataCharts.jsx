@@ -2,12 +2,11 @@ import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const DataCharts = ({ title, data, dataKey, color, unit = "" }) => {
-  // Extract latest value, handling potential string numbers from NOAA
   const latestValue = data.length > 0 ? parseFloat(data[data.length - 1][dataKey]).toFixed(2) : "---";
 
   return (
     <div className="glass p-6 h-64 flex flex-col gap-4 border border-slate-800/20 backdrop-blur-xl relative group overflow-hidden">
-      {/* Decorative Glow */}
+      {/* Dekoratif Işıma */}
       <div className={`absolute -top-10 -right-10 w-32 h-32 blur-[80px] opacity-20 pointer-events-none transition-all duration-700 group-hover:opacity-40`} style={{ background: color }} />
 
       <div className="flex items-center justify-between relative z-10">
@@ -22,13 +21,13 @@ const DataCharts = ({ title, data, dataKey, color, unit = "" }) => {
                 {latestValue} <span className="text-[10px] font-bold text-slate-500 ml-1">{unit}</span>
               </>
             ) : (
-              <span className="text-slate-700 text-sm animate-pulse italic">SYNCING...</span>
+              <span className="text-slate-700 text-sm animate-pulse italic">SENKRONİZE EDİLİYOR...</span>
             )}
           </p>
         </div>
         <div className="flex flex-col items-end">
           <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 border border-slate-800/50 uppercase tracking-tighter">
-            Realtime Stream
+            Canlı Akış
           </span>
         </div>
       </div>
