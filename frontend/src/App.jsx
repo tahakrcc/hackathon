@@ -29,6 +29,7 @@ function App() {
     kpIndex, 
     cmeEvents, 
     riskScore, 
+    aiAnalysis,
     loading: dataLoading, 
     lastUpdate 
   } = useSolarStore();
@@ -215,7 +216,7 @@ function App() {
                      <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, duration: 1 }} className="flex-1">
                         <CommandWidget title="Sentinel-AI Risk Evaluation" sensorId="SENTINEL_V4_AI" status="ANALYZING">
                            <div className="min-h-[220px] lg:min-h-[280px]">
-                              <RiskAnalysis score={riskScore} cmeEvents={cmeEvents} />
+                              <RiskAnalysis score={riskScore} cmeEvents={cmeEvents} aiAnalysis={aiAnalysis} />
                            </div>
                         </CommandWidget>
                      </motion.div>

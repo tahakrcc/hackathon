@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, AlertTriangle, Info, Zap } from 'lucide-react';
 
-const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
+const RiskAnalysis = ({ score = 0, cmeEvents = [], aiAnalysis = null }) => {
   const getRiskStatus = (s) => {
     if (s >= 75) return { label: 'KRİTİK', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/50' };
     if (s >= 50) return { label: 'YÜKSEK RİSK', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/50' };
@@ -10,11 +10,11 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
     return { label: 'NORMAL', color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/50' };
   };
 
-  const getAIAnalysis = (s) => {
-    if (s > 75) return "Kritik jeomanyetik bozulma tespit edildi. Manyetosfer sıkışması 4-8 saat içinde bekleniyor. Kutup ışığı yüksek enlemlerde görülebilir.";
-    if (s > 60) return "L1 noktasında jeomanyetik bozulma doğrulandı. Manyetosfer sıkışması 4-8 saat içinde bekleniyor.";
-    if (s > 40) return "Güneş rüzgarı parametrelerinde artış gözlemleniyor. Durumu izlemeye devam ediyoruz.";
-    return "Güneş rüzgarı parametreleri kararlı. Carrington sınıfı olay tehdidi tespit edilmedi.";
+  const getAIAnalysisText = (ai) => {
+    if (!ai) return "Yapay Zeka modülü veri topluyor. Keras LSTM modeli uyanış sürecinde...";
+    if (ai.level === "CRITICAL") return `Kritik jeomanyetik fırtına uyarısı! Beklenen Sym/H: ${ai.predicted_symh.toFixed(1)} nT. Manyetosfer çökme riski yüksek, şebekeleri korumaya alın.`;
+    if (ai.level === "WARNING") return `Orta ölçekli fırtına (Sym/H: ${ai.predicted_symh.toFixed(1)} nT) tahmin ediliyor. Kutup altı bölgelerde iletişim kopuklukları yaşanabilir.`;
+    return `Güneş faaliyetleri stabil. Tahmini Sym/H: ${ai.predicted_symh.toFixed(1)} nT. Herhangi bir plazma tehlikesi saptanmadı.`;
   };
 
   const status = getRiskStatus(score);
@@ -58,9 +58,16 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
           <div className="flex gap-4 p-3 bg-slate-900/50 border border-slate-800/30">
             <Info size={16} className="text-blue-400 mt-1 shrink-0" />
             <p className="text-xs text-slate-400 leading-relaxed">
-              {getAIAnalysis(score)}
+              {getAIAnalysisText(aiAnalysis)}
             </p>
           </div>
+
+          {aiAnalysis && (
+            <div className="flex justify-between items-center px-4 py-2 bg-slate-900/40 rounded-sm">
+              <span className="text-[10px] text-slate-400 tracking-widest uppercase">Sentinel_AI_Confidence</span>
+              <span className="text-xs font-mono text-blue-400">{aiAnalysis.confidence}%</span>
+            </div>
+          )}
 
           {cmeEvents.length > 0 && (
             <div className="border-l-2 border-orange-500 pl-4 py-1">
