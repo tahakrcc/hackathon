@@ -1,108 +1,150 @@
-import React, { useRef, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Sphere, Float, OrbitControls, useTexture } from '@react-three/drei';
+import React, { useRef, useMemo } from 'react';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
-
-const AtmosphereVertexShader = `
-varying vec3 vNormal;
-void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`;
-
-const AtmosphereFragmentShader = `
-varying vec3 vNormal;
-void main() {
-    float intensity = pow(0.65 - dot(vNormal, vec3(0, 0, 1.0)), 4.0);
-    gl_FragColor = vec4(0.1, 0.4, 1.0, 1.0) * intensity;
-}
-`;
+import { motion } from 'framer-motion';
 
 const Earth = ({ riskScore }) => {
-  const mesh = useRef();
-  const atmosphereRef = useRef();
+  const earthRef = useRef();
+  const cloudsRef = useRef();
   
-  // Load standard earth textures
-  const [colorMap, bumpMap, specularMap] = useTexture([
+  // Use only local textures that we know exist
+  const [map, bump, spec] = useLoader(THREE.TextureLoader, [
     '/textures/earthmap.jpg',
     '/textures/earthbump.jpg',
     '/textures/earthspec.jpg'
   ]);
-  
+
   useFrame((state, delta) => {
-    if (mesh.current) {
-      mesh.current.rotation.y += 0.001;
-    }
+    if (earthRef.current) earthRef.current.rotation.y += delta * 0.05;
+    if (cloudsRef.current) cloudsRef.current.rotation.y += delta * 0.07;
   });
 
   return (
     <group>
-      {/* Earth Surface sphere */}
-      <Sphere ref={mesh} args={[2, 64, 64]}>
-        <meshStandardMaterial
-          map={colorMap}
-          bumpMap={bumpMap}
-          bumpScale={0.15} // stronger terrain depth
-          roughnessMap={specularMap}
-          roughness={0.6} // shinier water
-          metalness={0.1}
-          emissive={"#ffffff"}
-          emissiveIntensity={0.05 + (riskScore / 1000)} // very subtle base glow
+      <mesh ref={earthRef}>
+        <sphereGeometry args={[2, 64, 64]} />
+        <meshPhongMaterial 
+          map={map} 
+          bumpMap={bump} 
+          bumpScale={0.05} 
+          specularMap={spec} 
+          specular={new THREE.Color('grey')}
+          shininess={5}
         />
-      </Sphere>
+      </mesh>
 
-      {/* Earth Atmosphere Glow (The thin blue line) */}
-      <Sphere args={[2.05, 64, 64]}>
-        <shaderMaterial
-          vertexShader={AtmosphereVertexShader}
-          fragmentShader={AtmosphereFragmentShader}
-          blending={THREE.AdditiveBlending}
-          side={THREE.BackSide}
-          transparent={true}
+      {/* Cloud Layer - Procedural or Local if exists, currently using same map as fallback to avoid crash */}
+      <mesh ref={cloudsRef} scale={[1.02, 1.02, 1.02]}>
+        <sphereGeometry args={[2, 64, 64]} />
+        <meshPhongMaterial 
+          map={map} 
+          transparent 
+          opacity={0.15} 
           depthWrite={false}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
         />
-      </Sphere>
-      
-      {/* Auroral Oval (Represented as rings of light) - More prominent during high risk */}
-      {riskScore > 30 && (
-        <mesh position={[0, 1.85, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.55, 0.05 + (riskScore/1000), 16, 100]} />
-          <meshBasicMaterial color="#00ffcc" transparent opacity={0.3 + (riskScore/150)} />
-        </mesh>
-      )}
-      {riskScore > 30 && (
-        <mesh position={[0, -1.85, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.55, 0.05 + (riskScore/1000), 16, 100]} />
-          <meshBasicMaterial color="#00ffcc" transparent opacity={0.3 + (riskScore/150)} />
-        </mesh>
-      )}
+      </mesh>
 
-      {/* Enhanced Sun/Ambient light setup for vibrant colors */}
-      <directionalLight position={[5, 3, 5]} intensity={3.5} color="#ffffff" />
-      <directionalLight position={[-5, -3, -5]} intensity={0.5} color="#446688" /> {/* Backlight for dark side */}
-      <ambientLight intensity={0.2} color="#ffffff" />
+      {/* Atmospheric Glow (Rim) */}
+      <Atmosphere scale={1.2} color="#4ade80" intensity={riskScore > 50 ? 1.5 : 0.8} />
     </group>
   );
 };
 
-const Earth3D = ({ riskScore = 20 }) => {
+const Atmosphere = ({ scale, color, intensity }) => {
+  const uniforms = useMemo(() => ({
+    uColor: { value: new THREE.Color(color) },
+    uIntensity: { value: intensity },
+  }), [color, intensity]);
+
   return (
-    <div className="w-full h-[300px] cursor-grab active:cursor-grabbing rounded-2xl overflow-hidden glass border border-slate-800/50">
-      <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-        <color attach="background" args={['#05070a']} />
-        <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
-          <Suspense fallback={
-            <mesh>
-              <sphereGeometry args={[2, 32, 32]} />
-              <meshBasicMaterial color="#1e293b" wireframe />
-            </mesh>
-          }>
-             <Earth riskScore={riskScore} />
-          </Suspense>
-        </Float>
+    <mesh scale={scale}>
+      <sphereGeometry args={[2, 64, 64]} />
+      <shaderMaterial
+        vertexShader={`
+          varying vec3 vNormal;
+          varying vec3 vWorldPosition;
+          void main() {
+            vNormal = normalize(normalMatrix * normal);
+            vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `}
+        fragmentShader={`
+          uniform vec3 uColor;
+          uniform float uIntensity;
+          varying vec3 vNormal;
+          varying vec3 vWorldPosition;
+          void main() {
+            float rim = 1.0 - max(0.0, dot(vNormal, normalize(cameraPosition - vWorldPosition)));
+            gl_FragColor = vec4(uColor * pow(rim, 6.0) * uIntensity, pow(rim, 6.0) * uIntensity);
+          }
+        `}
+        uniforms={uniforms}
+        side={THREE.BackSide}
+        transparent
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+};
+
+const Earth3D = ({ riskScore = 20 }) => {
+  const isHighRisk = riskScore > 50;
+  
+  return (
+    <div className="w-full h-full min-h-[300px] relative group">
+      {/* 3D CANVAS LAYER */}
+      <Canvas 
+        gl={{ antialias: true, alpha: true }} 
+        onCreated={({ gl }) => {
+          gl.setClearColor(new THREE.Color('#000000'), 0);
+        }}
+      >
+        <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={2} color={isHighRisk ? "#f97316" : "#ffffff"} />
+        
+        <React.Suspense fallback={null}>
+          <Earth riskScore={riskScore} />
+        </React.Suspense>
+        
         <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
       </Canvas>
+      
+      {/* TACTICAL HUD OVERLAY */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        {/* Targeting Reticle */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-blue-500/10 rounded-full">
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+            className="absolute inset-0 border-t-2 border-blue-500/40 rounded-full"
+          />
+        </div>
+
+        {/* Scanning Axis */}
+        <div className="absolute top-0 left-1/2 w-[1px] h-full bg-gradient-to-b from-transparent via-blue-500/10 to-transparent" />
+        <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/10 to-transparent" />
+
+        {/* Coordinate Markers */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <div className="w-1 h-1 bg-blue-500 mb-1" />
+            <span className="text-[6px] tech-header text-blue-500/40 uppercase tracking-[3px]">N_POLE_AXIS</span>
+        </div>
+        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <span className="text-[6px] tech-header text-blue-500/40 uppercase tracking-[3px] mb-1">S_POLE_AXIS</span>
+            <div className="w-1 h-1 bg-blue-500" />
+        </div>
+
+        {/* Shield Sync Data */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md px-4 py-1 border border-blue-500/20">
+           <p className="text-[7px] tech-header text-blue-400 tracking-[5px] animate-pulse">SHIELD_SYNC: 100%</p>
+        </div>
+      </div>
     </div>
   );
 };

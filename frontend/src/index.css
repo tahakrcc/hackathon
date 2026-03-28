@@ -1,94 +1,192 @@
 @import "tailwindcss";
 
-@theme {
-  --color-deep: #05070a;
-}
-
 :root {
-  --bg-deep: #05070a;
-  --bg-card: rgba(15, 20, 30, 0.7);
-  --accent-orange: #ffab40;
-  --accent-green: #00e676;
-  --accent-purple: #7c4dff;
-  --text-primary: #f8faff;
-  --text-secondary: #94a3b8;
-  --neon-glow-orange: 0 0 20px rgba(255, 171, 64, 0.4);
-  --neon-glow-green: 0 0 20px rgba(0, 230, 118, 0.4);
+  --orange-500: #f97316;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Outfit', sans-serif;
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: var(--bg-deep);
-  color: var(--text-primary);
-  overflow-x: hidden;
+  background-color: #05070a;
   background-image: 
-    radial-gradient(circle at 50% 50%, rgba(20, 30, 60, 0.3) 0%, transparent 70%),
-    url("https://www.transparenttextures.com/patterns/stardust.png");
+    radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.02) 0%, transparent 80%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  color: var(--slate-200);
+  overflow: hidden;
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Snap Layout System V4.0 */
+.snap-container {
+  height: 100vh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* Navbar height h-20 */
+}
+
+.snap-section {
+  height: 100vh;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Consistent Centering Container */
+.section-content {
+  max-width: 80rem; /* 1280px */
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  height: 100%;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  position: relative;
+  z-index: 20;
+}
+
+/* Glassmorphism V4.0 - Ultra Sharp */
 .glass {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 24px;
+  background: rgba(8, 12, 20, 0.7);
+  backdrop-filter: blur(25px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.8);
+  position: relative;
 }
 
-.glow-orange { filter: drop-shadow(0 0 10px rgba(255, 171, 64, 0.4)); }
-.glow-green { filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.4)); }
-.glow-red { filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.5)); }
-
-.bg-scanline {
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.1) 50%
-  ),
-  linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.02),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.02)
-  );
-  background-size: 100% 2px, 3px 100%;
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(255, 255, 255, 0.02) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.3;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.8; }
+.glass-header {
+  background: linear-gradient(180deg, rgba(8, 12, 20, 0.8) 0%, rgba(8, 12, 20, 0.4) 100%);
+  backdrop-filter: blur(30px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.animate-pulse-slow {
-  animation: pulse 4s infinite ease-in-out;
+/* Typography V4.0 */
+.tech-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+.mono-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+/* Background Layers */
+.background-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 0%, rgba(5, 7, 10, 0.4) 100%);
+}
+
+#hud-vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 150%);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+#hud-scanlines {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1001;
+  opacity: 0.1;
+}
+
+/* HUD Metadata Utilities - Unified */
+.hud-bracket-l, .hud-bracket-r {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 15px;
+  border-top: 1px solid rgba(249, 115, 22, 0.4);
+  border-bottom: 1px solid rgba(249, 115, 22, 0.4);
+  opacity: 0.5;
+}
+.hud-bracket-l { left: -30px; border-left: 1px solid rgba(249, 115, 22, 0.4); }
+.hud-bracket-r { right: -30px; border-right: 1px solid rgba(249, 115, 22, 0.4); }
+
+.hud-scanner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.4), transparent);
+  opacity: 0.15;
+  animation: scan-line 5s linear infinite;
+  z-index: 501;
+  pointer-events: none;
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-30vh); }
+  100% { transform: translateY(130vh); }
+}
+
+.glow-text {
+  text-shadow: 0 0 15px rgba(251, 146, 60, 0.3);
+}
+
+.glow-orange {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+}
+
+/* Custom Utilities */
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
 }
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
+/* Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
 }
 
-::-webkit-scrollbar-track {
-  background: #05070a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+.animate-pulse-slow {
+  animation: pulse-slow 4s infinite ease-in-out;
 }

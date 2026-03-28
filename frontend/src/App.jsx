@@ -1,26 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 import { 
   Zap, 
   Bell, 
   Settings, 
-  Globe, 
-  Shield, 
-  AlertTriangle,
-  Activity,
-  Wind,
-  Layers,
+  ChevronDown,
+  Globe,
   Database,
-  Compass,
-  CloudRain,
-  X
+  Shield,
+  Activity
 } from 'lucide-react';
 import { useSolarStore } from './store/solarStore';
 import Sun3D from './components/Sun3D';
 import Earth3D from './components/Earth3D';
 import DataCharts from './components/DataCharts';
 import RiskAnalysis from './components/RiskAnalysis';
-import SolarOverlay from './components/SolarOverlay';
+import StarfieldBackground from './components/StarfieldBackground';
+import BootSequence from './components/BootSequence';
+import CommandWidget from './components/CommandWidget';
 
 function App() {
   const { 
@@ -29,17 +26,30 @@ function App() {
     solarWind, 
     solarMag,
     kpIndex, 
-    auroraData,
     cmeEvents, 
     riskScore, 
-    sunImage, 
-    loading, 
+    loading: dataLoading, 
     lastUpdate 
   } = useSolarStore();
 
-  const [activeTab, setActiveTab] = useState('telemetry');
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [activeSection, setActiveSection] = useState(0);
+  const [isBooting, setIsBooting] = useState(true);
+  const containerRef = useRef(null);
+
+  const { scrollYProgress: rawScrollProgress } = useScroll({ container: containerRef });
+  
+  // Ultra-Smooth Physics config for Elite V4.2
+  const scrollYProgress = useSpring(rawScrollProgress, {
+    stiffness: 60,
+    damping: 35,
+    restDelta: 0.0001
+  });
+
+  // V4.0 Cinematic Parallax
+  const sunScale = useTransform(scrollYProgress, [0, 0.2, 0.5, 0.8, 1], [1.7, 0.8, 0.5, 0.35, 0.3]);
+  const sunX = useTransform(scrollYProgress, [0, 0.25, 0.5, 0.75, 1], ["0%", "30%", "-25%", "20%", "0%"]);
+  const sunY = useTransform(scrollYProgress, [0, 0.25, 0.5, 0.75, 1], ["5%", "0%", "-5%", "10%", "35%"]);
+  const sunOpacity = useTransform(scrollYProgress, [0, 0.4, 0.7, 1], [1, 0.9, 0.5, 0.25]);
 
   useEffect(() => {
     updateData();
@@ -47,371 +57,349 @@ function App() {
     return () => clearInterval(interval);
   }, [updateData]);
 
-  // Kp Index'e göre dinamik bölge etki hesaplaması
-  const getRegionImpacts = () => {
-    const latestKp = kpIndex.length > 0 ? parseFloat(kpIndex[kpIndex.length - 1].kp_index) : 0;
-    
-    if (latestKp >= 7) {
-      return [
-        { label: 'Kuzey Kutup Bölgesi', risk: 'Şiddetli Kutup Işığı', color: 'text-red-400' },
-        { label: 'Yüksek Enlemler', risk: 'Yoğun HF Soğurma', color: 'text-orange-400' },
-        { label: 'Ekvator Bölgesi', risk: 'Dikkat', color: 'text-yellow-400' },
-      ];
-    } else if (latestKp >= 4) {
-      return [
-        { label: 'Kuzey Kutup Bölgesi', risk: 'Yoğun Kutup Işığı', color: 'text-green-400' },
-        { label: 'Yüksek Enlemler', risk: 'Düşük HF Soğurma', color: 'text-yellow-400' },
-        { label: 'Ekvator Bölgesi', risk: 'Kararlı', color: 'text-slate-500' },
-      ];
-    } else {
-      return [
-        { label: 'Kuzey Kutup Bölgesi', risk: 'Normal Kutup Işığı', color: 'text-green-400' },
-        { label: 'Yüksek Enlemler', risk: 'Soğurma Yok', color: 'text-slate-500' },
-        { label: 'Ekvator Bölgesi', risk: 'Kararlı', color: 'text-slate-500' },
-      ];
-    }
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const h = containerRef.current.offsetHeight;
+    const s = Math.round(containerRef.current.scrollTop / h);
+    if (s !== activeSection) setActiveSection(s);
   };
 
-  const regionImpacts = getRegionImpacts();
+  const getRegionImpacts = () => {
+    const latestKp = kpIndex.length > 0 ? parseFloat(kpIndex[kpIndex.length - 1].kp_index) : 0;
+    if (latestKp >= 7) return [{ label: 'Kuzey Kutup', risk: 'Şiddetli', color: 'text-red-400' }, { label: 'Yüksek Enlem', risk: 'Yoğun', color: 'text-orange-400' }];
+    if (latestKp >= 5) return [{ label: 'Kuzey Kutup', risk: 'Aktif', color: 'text-orange-400' }, { label: 'Yüksek Enlem', risk: 'Hareketli', color: 'text-yellow-400' }];
+    return [{ label: 'Kuzey Kutup', risk: 'Normal', color: 'text-green-400' }, { label: 'Yüksek Enlem', risk: 'Sakin', color: 'text-slate-500' }];
+  };
 
   return (
-    <div className="min-h-screen bg-[#05070a] text-slate-200 p-4 md:p-6 lg:p-8 flex flex-col gap-6 font-sans antialiased overflow-x-hidden">
+    <div className="h-screen bg-[#05070a] text-slate-200 font-sans selection:bg-orange-500/30 overflow-hidden relative">
       
-      {/* Uzay Arka Plan Katmanı */}
-      <div className="fixed inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
+      {/* Background VFX */}
+      <div id="hud-vignette" />
+      <div id="hud-scanlines" />
+      <StarfieldBackground />
 
-      {/* Global Navigasyon Başlığı */}
-      <nav className="glass px-6 py-4 flex items-center justify-between border border-white/5 relative z-50">
-        <div className="flex items-center gap-6">
-          <div className="bg-orange-500/20 p-2.5 rounded-2xl border border-orange-500/30 glow-orange">
-            <Zap size={28} className="text-orange-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight leading-none text-white">
-              GÖREV MERKEZİ <span className="text-orange-500 ml-1">SOLAR SENTINEL</span>
-            </h1>
-            <p className="text-[10px] text-slate-500 font-bold tracking-[4px] uppercase mt-1">
-              Küresel CME Tespiti ve Erken Uyarı Ağı
-            </p>
-          </div>
-        </div>
-
-        <div className="hidden xl:flex items-center gap-10">
-          <NavButton label="Telemetri" active={activeTab === 'telemetry'} onClick={() => setActiveTab('telemetry')} />
-          <NavButton label="Manyetosfer" active={activeTab === 'magneto'} onClick={() => setActiveTab('magneto')} />
-          <NavButton label="Jeomanyetik" active={activeTab === 'geo'} onClick={() => setActiveTab('geo')} />
-          <NavButton label="Arşiv v2.4" active={activeTab === 'archive'} onClick={() => setActiveTab('archive')} />
-        </div>
-
-        <div className="flex items-center gap-6">
-          <div className="text-right hidden sm:block border-r border-slate-800 pr-6 mr-6">
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Ağ Durumu</p>
-            <p className="text-[10px] font-black text-green-500 flex items-center gap-2 justify-end">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              SWPC AKTİF
-            </p>
-          </div>
-          <div className="flex gap-3 relative">
-            <IconButton icon={Bell} onClick={() => setShowNotifications(!showNotifications)} badge={cmeEvents.length} />
-            <IconButton icon={Settings} onClick={() => setShowSettings(!showSettings)} />
-          </div>
-        </div>
-      </nav>
-
-      {/* Bildirim Paneli */}
-      <AnimatePresence>
-        {showNotifications && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="fixed top-24 right-8 w-80 z-[100] glass rounded-2xl border border-white/10 p-4 shadow-2xl"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-black text-white">Bildirimler</h3>
-              <button onClick={() => setShowNotifications(false)} className="text-slate-500 hover:text-white"><X size={16} /></button>
-            </div>
-            {cmeEvents.length > 0 ? cmeEvents.slice(0, 5).map((evt, i) => (
-              <div key={i} className="p-3 mb-2 rounded-xl bg-slate-900/60 border border-slate-800/40 border-l-4 border-l-orange-500">
-                <p className="text-[10px] font-black text-orange-500">CME TESPİT EDİLDİ</p>
-                <p className="text-xs text-slate-300 truncate">{evt.activityID}</p>
-                <p className="text-[9px] text-slate-600">{evt.startTime?.split('T')[0]}</p>
-              </div>
-            )) : (
-              <p className="text-xs text-slate-600 text-center py-4">Yeni bildirim yok</p>
-            )}
-          </motion.div>
-        )}
+      <AnimatePresence mode="wait">
+        {isBooting && <BootSequence key="boot" onComplete={() => setIsBooting(false)} />}
       </AnimatePresence>
 
-      {/* Ayarlar Modalı */}
-      <AnimatePresence>
-        {showSettings && (
+      {!isBooting && (
+        <>
+          {/* PERSISTENT 3D SUN LAYER */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowSettings(false)}
+            style={{ scale: sunScale, x: sunX, y: sunY, opacity: sunOpacity }}
+            className="background-canvas"
           >
-            <div className="w-96 glass rounded-2xl border border-white/10 p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-black text-white">Ayarlar</h3>
-                <button onClick={() => setShowSettings(false)} className="text-slate-500 hover:text-white"><X size={18} /></button>
-              </div>
-              <div className="space-y-4">
-                <SettingRow label="Veri Yenileme Sıklığı" value="60 saniye" />
-                <SettingRow label="Veri Kaynağı" value="NOAA SWPC + NASA DONKI" />
-                <SettingRow label="NASA API Anahtarı" value="••••••••YEd (Aktif)" />
-                <SettingRow label="Güneş Görüntüsü" value="SDO / Helioviewer" />
-                <SettingRow label="Sürüm" value="Solar Sentinel v2.4" />
-              </div>
-            </div>
+            <Sun3D riskScore={riskScore} />
           </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Primary Dashboard Grid */}
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10 flex-1">
-        
-        {/* Left Column: Telemetry & Feeds (Shared or Tab-specific) */}
-        <div className="lg:col-span-3 flex flex-col gap-8">
-          {activeTab === 'telemetry' ? (
-            <div className="grid grid-cols-1 gap-6">
-              <DataCharts title="X-Işını Akısı (GOES-16)" data={xrayFlux} dataKey="flux" color="#fbbf24" unit="W/m²" />
-              <DataCharts title="Manyetik Alan Gücü (Bz)" data={solarMag} dataKey="bz_gsm" color="#a855f7" unit="nT" />
-              <DataCharts title="Güneş Rüzgarı Hızı" data={solarWind} dataKey="speed" color="#22d3ee" unit="km/s" />
-            </div>
-          ) : activeTab === 'magneto' ? (
-            <div className="grid grid-cols-1 gap-6">
-              <DataCharts title="Manyetik Alan (Bt)" data={solarMag} dataKey="bt" color="#a855f7" unit="nT" />
-              <DataCharts title="Proton Yoğunluğu" data={solarWind} dataKey="density" color="#ef4444" unit="p/cm³" />
-              <div className="glass p-6 rounded-3xl border border-white/5 bg-purple-500/5">
-                <h4 className="text-[10px] font-black text-purple-400 uppercase mb-2">Manyetosfer Durumu</h4>
-                <p className="text-xs text-slate-400">Manyetopause konumu kararlı. IMF Bz yönü: {solarMag.length > 0 && parseFloat(solarMag[solarMag.length-1].bz_gsm) < 0 ? 'Güney (S)' : 'Kuzey (N)'}</p>
+          {/* V4.0 ELITE NAVIGATION */}
+          <nav className="fixed top-0 left-0 w-full glass-header z-[2000] px-10 h-20 flex flex-row items-center justify-between">
+            <div className="flex flex-row items-center gap-4">
+              <div className="bg-orange-500/10 p-2 border border-orange-500/30 glow-orange">
+                <Zap size={20} className="text-orange-500" />
+              </div>
+              <div>
+                <h1 className="text-base tech-header text-white glow-text tracking-widest pl-2">SOLAR SENTINEL</h1>
+                <p className="text-[8px] mono-info text-slate-500 uppercase pl-2">Elite Command Hub V4.0</p>
               </div>
             </div>
-          ) : (
-            <div className="glass p-6 rounded-3xl border border-white/5 h-full flex flex-col items-center justify-center opacity-40">
-              <Activity size={32} className="mb-4" />
-              <p className="text-[10px] uppercase font-black">Yan Panel Telemetrisi</p>
+
+            <div className="hidden lg:flex flex-row gap-12">
+              <NavOption label="MISSION_CORE" icon={Activity} active={activeSection === 0} />
+              <NavOption label="HELYO_DATA" icon={Database} active={activeSection === 1} />
+              <NavOption label="TERRA_SHIELD" icon={Globe} active={activeSection === 2} />
+              <NavOption label="EVENT_LOGS" icon={Shield} active={activeSection === 3} />
             </div>
-          )}
 
-          {/* Realtime Event Stream (Always visible or localized) */}
-          <div className="glass p-6 rounded-3xl border border-white/5 flex-1 select-none">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[2px] mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Database size={14} className="text-blue-500" />
-                {activeTab === 'archive' ? 'Tarihsel Arşiv' : 'Son Olaylar'}
-              </div>
-              <span className="text-[9px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-400">
-                {activeTab === 'archive' ? 'GEÇMİŞ 30 GÜN' : '72 SAAT PENCERESİ'}
-              </span>
-            </h3>
-            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
-              {cmeEvents.length > 0 ? cmeEvents.map((evt, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/40 hover:bg-slate-900 transition-all border-l-4 border-l-orange-500">
-                  <div className="flex justify-between items-start mb-1">
-                    <p className="text-[10px] font-black text-orange-500 tracking-wider">CME TESPİT EDİLDİ</p>
-                    <span className="text-[9px] font-bold text-slate-600">{evt.startTime?.split('T')[0]}</span>
-                  </div>
-                  <p className="text-xs font-bold text-slate-300 truncate mb-2">{evt.activityID}</p>
-                  <div className="flex items-center gap-4 text-[9px] font-bold text-slate-500">
-                    <span className="flex items-center gap-1"><Compass size={10} /> KONUM: {evt.sourceLocation || '---'}</span>
-                  </div>
-                </div>
-              )) : (
-                <div className="flex flex-col items-center justify-center py-10 text-slate-700 opacity-50">
-                  <Activity size={32} className="animate-pulse mb-3" />
-                  <p className="text-[10px] uppercase font-black tracking-widest">Aktif Olay Yok</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Center Column: Visualizations */}
-        <div className="lg:col-span-6 flex flex-col gap-8">
-          {activeTab === 'telemetry' || activeTab === 'archive' ? (
-            <>
-              {/* Main Heliographic Monitor */}
-              <div className="glass rounded-[32px] overflow-hidden border border-white/5 relative bg-black group min-h-[450px]">
-                <Sun3D riskScore={riskScore} />
-                <div className="absolute top-8 left-8 pointer-events-none">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest">Helyografik Projeksiyon v4</span>
-                  </div>
-                  <h2 className="text-3xl font-black text-white drop-shadow-2xl">GÜNEŞ SDO <span className="text-orange-500">CANLI</span></h2>
-                </div>
-                
-                <div className="absolute bottom-8 right-8 flex gap-4 pointer-events-none">
-                  <MetricBox label="Dönüş" value="2,02 km/s" />
-                  <MetricBox label="Kütle" value="1,98e30 kg" />
-                  <MetricBox label="Çekirdek" value="15M °C" />
-                </div>
-              </div>
-
-              {/* SDO Filter Overlay Panel */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-2">Yüksek Çözünürlük SDO 171 Å Filtresi</h3>
-                    <span className="text-[10px] font-bold text-slate-600 mr-2">GÜNCELLEME: 60SN</span>
-                </div>
-                <SolarOverlay imageUrl={sunImage} riskScore={riskScore} cmeEvents={cmeEvents} />
-              </div>
-            </>
-          ) : activeTab === 'magneto' ? (
-             <div className="flex flex-col gap-8 flex-1">
-                <div className="glass rounded-[32px] p-8 border border-white/5 bg-slate-900/20 flex-1 flex flex-col items-center justify-center">
-                   <div className="w-full max-w-lg mb-10">
-                      <Earth3D riskScore={riskScore} scale={1.5} />
-                   </div>
-                   <div className="text-center max-w-md">
-                      <h2 className="text-2xl font-black text-white mb-4">MANYETİK KALKAN İZLEME</h2>
-                      <p className="text-sm text-slate-400">Yeryüzü manyetosferindeki güneş rüzgarı baskısı ve şok dalgaları anlık olarak izleniyor. Şu anki manyetopause sıkışma riski: %{Math.max(0, riskScore - 20)}</p>
-                   </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                   <MetricBox label="Şok Dalgası" value="Yok" />
-                   <MetricBox label="IMF Durumu" value="Stabil" />
-                   <MetricBox label="Basınç" value="1.5 nPa" />
-                </div>
-             </div>
-          ) : activeTab === 'geo' ? (
-            <div className="flex flex-col gap-8 flex-1">
-               <div className="glass rounded-[32px] p-8 border border-white/5 bg-slate-900/20">
-                  <h3 className="text-sm font-black text-white mb-6 uppercase tracking-widest">Jeomanyetik Fırtına Analizi (Kp)</h3>
-                  <div className="grid grid-cols-2 gap-8">
-                     <div className="flex flex-col gap-4">
-                        <p className="text-xs text-slate-400">Kp İndeksi, yeryüzündeki manyetik bozulmanın küresel ölçeğidir. 5 ve üzeri fırtına olarak kabul edilir.</p>
-                        <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
-                           <p className="text-[10px] font-black text-slate-500 uppercase mb-2">Güncel Kp İndeksi</p>
-                           <p className="text-5xl font-black text-orange-500">{kpIndex.length > 0 ? kpIndex[kpIndex.length-1].kp_index : '--'}</p>
-                        </div>
-                     </div>
-                     <div className="space-y-4">
-                        <div className="p-4 rounded-xl border border-green-500/20 bg-green-500/5">
-                           <p className="text-[10px] font-black text-green-500 uppercase">G-Scale (Güneş Fırtınası)</p>
-                           <p className="text-sm font-bold text-white">{riskScore > 50 ? 'G2 - Orta' : 'G0 - Sakin'}</p>
-                        </div>
-                        <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
-                           <p className="text-[10px] font-black text-blue-500 uppercase">R-Scale (Radyo Kararma)</p>
-                           <p className="text-sm font-bold text-white">R0 - Etki Yok</p>
-                        </div>
-                     </div>
-                  </div>
+            <div className="flex flex-row items-center gap-6">
+               <div className="hidden md:flex flex-col items-end border-r border-white/5 pr-6">
+                 <span className="text-[10px] tech-header text-green-500 animate-pulse">L1_LINK: ACTIVE</span>
+                 <span className="text-[7px] mono-info text-slate-600">SYNC: {lastUpdate ? lastUpdate.toLocaleTimeString() : '---'}</span>
                </div>
-               <DataCharts title="Küresel Kp İndeksi (Tahmin)" data={kpIndex} dataKey="kp_index" color="#f97316" unit="" />
+               <IconButton icon={Bell} badge={cmeEvents.length} />
+               <IconButton icon={Settings} />
             </div>
-          ) : null}
-        </div>
+          </nav>
 
-        {/* Right Column: Analytics & Aurora */}
-        <div className="lg:col-span-3 flex flex-col gap-8">
-          <RiskAnalysis score={riskScore} cmeEvents={cmeEvents} />
-          
-          <div className="flex flex-col gap-6">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[2px] mb-2 flex items-center justify-between px-2">
-              <div className="flex items-center gap-2">
-                <CloudRain size={14} className="text-green-500" />
-                Kutup Işığı Tahmini
-              </div>
-              <span className="text-[9px] font-bold text-green-500/50">SON OVATION</span>
-            </h3>
-            {activeTab !== 'magneto' && <Earth3D riskScore={riskScore} />}
-            
-            <div className="p-6 rounded-3xl glass border border-white/5 bg-slate-900/20 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tahmini Etki Alanı</p>
-                  <Globe size={14} className="text-slate-600" />
-                </div>
-                <div className="space-y-3">
-                  {regionImpacts.map((r, i) => (
-                    <RegionImpact key={i} label={r.label} risk={r.risk} color={r.color} />
-                  ))}
-                </div>
-            </div>
+          {/* HUD SIDEBAR INDICATOR */}
+          <div className="fixed left-6 top-1/2 -translate-y-1/2 flex flex-col gap-8 z-[2000]">
+             {[0, 1, 2, 3].map(i => (
+               <div key={i} className={`w-1 h-3 rounded-full transition-all duration-700 ${activeSection === i ? 'bg-orange-500 h-10 glow-orange' : 'bg-slate-800'}`} />
+             ))}
           </div>
 
-          {/* Kritik Durum Acil Protokol */}
-          {riskScore > 75 && (
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="p-6 rounded-3xl bg-red-600/20 border border-red-500/50 glow-red"
-            >
-              <div className="flex items-center gap-3 mb-3 text-red-500">
-                <Shield size={22} className="animate-bounce" />
-                <h3 className="font-black text-sm uppercase tracking-tighter">DELTA KALKAN PROTOKOLÜ</h3>
-              </div>
-              <p className="text-[11px] text-red-100 font-bold leading-relaxed opacity-80">
-                L1 Lagrange noktası manyetosonik hız eşiği aşıldı. Trans-polar uçuş irtifalarının derhal yere indirilmesi önerilir.
-              </p>
-            </motion.div>
-          )}
-        </div>
-      </main>
+          <main ref={containerRef} onScroll={handleScroll} className="snap-container relative z-10 w-full h-full no-scrollbar">
+            
+            {/* SECTION 0: MISSION CORE (Majestic Hero) */}
+            <section className="snap-section flex flex-col items-center justify-center">
+               <div className="hud-scanner" />
+               <div className="section-content flex flex-col items-center justify-center pt-20">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 40 }} 
+                    whileInView={{ opacity: 1, y: 0 }} 
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                  >
+                    <p className="text-[10px] tech-header text-orange-500 mb-4 tracking-[12px] animate-pulse uppercase">Mission Status: Nominal</p>
+                    <h2 className="text-8xl lg:text-9xl tech-header text-white glow-text tracking-[40px] opacity-90 pl-[40px] mb-12">CORE</h2>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-6xl mx-auto">
+                      <CommandWidget title="SURFACE_TEMP" sensorId="CORE_PROBE_01" status="NOMINAL">
+                        <div className="py-6 text-center group">
+                          <p className="text-5xl font-black text-white glow-text group-hover:text-orange-500 transition-colors">15.7M K</p>
+                          <p className="text-[8px] tech-header text-slate-600 mt-2">THERMAL_EQUILIBRIUM_ACTIVE</p>
+                        </div>
+                      </CommandWidget>
 
-      {/* Global Alt Bilgi */}
-      <footer className="glass p-5 border border-white/5 flex flex-wrap items-center justify-between gap-6 relative z-10 select-none">
-        <div className="flex gap-10 overflow-x-auto no-scrollbar">
-          <FooterStat label="Veri Motoru" value="SWPC JSON V1.02" />
-          <FooterStat label="Gözlem" value={lastUpdate ? lastUpdate.toLocaleTimeString('tr-TR') : 'SENKRONİZE EDİLİYOR...'} />
-          <FooterStat label="Gecikme" value={loading ? 'VERİ ÇEKİLİYOR...' : '0.12ms L1 GECİKME'} color={loading ? 'text-yellow-500' : 'text-blue-500'} />
-          <FooterStat label="CME Mantığı" value="NASA DONKI API" />
-        </div>
-        <div className="text-[10px] font-black text-slate-700 tracking-[3px] uppercase ml-auto">
-          &copy; 2026 GÖREV MERKEZİ // SENTINEL-TK-NET
-        </div>
-      </footer>
+                      <CommandWidget title="SOLAR_WIND_VEL" sensorId="DSCOVR_L1_STREAM" status="LIVE">
+                        <div className="py-6 text-center group">
+                          <p className="text-5xl font-black text-white glow-text group-hover:text-blue-400 transition-colors">{solarWind[0]?.speed || '---'} km/s</p>
+                          <p className="text-[8px] tech-header text-slate-600 mt-2">PARTICLE_FLUX_STABLE</p>
+                        </div>
+                      </CommandWidget>
+
+                      <CommandWidget title="THREAT_VEC_ANALYSIS" sensorId="SENTINEL_AI_V4" status={riskScore > 50 ? 'CRITICAL' : 'STABLE'}>
+                        <div className="py-6 text-center group">
+                          <p className={`text-5xl font-black glow-text group-hover:scale-110 transition-transform ${riskScore > 50 ? 'text-orange-500' : 'text-blue-400'}`}>
+                            {riskScore > 50 ? 'HIGH' : 'LOW'}
+                          </p>
+                          <p className="text-[8px] tech-header text-slate-600 mt-2">SENTINEL_AI_CONFIDENCE: 98.4%</p>
+                        </div>
+                      </CommandWidget>
+                    </div>
+
+                    <ScrollHint label="ANALYZE_HELYOSPHERE" />
+                  </motion.div>
+               </div>
+            </section>
+
+            {/* SECTION 1: HELYO-DATA (3-Column Command Hub) - Balanced V4.2 */}
+            <section className="snap-section flex items-center justify-center h-full">
+               <div className="section-content flex flex-col justify-center gap-4 lg:gap-12">
+                 <div className="grid grid-cols-12 gap-6 lg:gap-10 items-stretch h-full py-4">
+                  {/* Left Column: Charts */}
+                  <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                     <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 1 }}>
+                        <CommandWidget title="X-Ray Radiance Flux" sensorId="GOES_R_16" status="LIVE">
+                           <div className="h-[160px] lg:h-[220px]">
+                            <DataCharts title="" data={xrayFlux} dataKey="flux" color="#fbbf24" unit="W/m²" />
+                           </div>
+                        </CommandWidget>
+                     </motion.div>
+                     <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.4, duration: 1 }}>
+                        <CommandWidget title="Magnetic Field Intensity" sensorId="DSCOVR_L1" status="SYNCED">
+                           <div className="h-[160px] lg:h-[220px]">
+                            <DataCharts title="" data={solarMag} dataKey="bt" color="#a855f7" unit="nT" />
+                           </div>
+                        </CommandWidget>
+                     </motion.div>
+                  </div>
+
+                  {/* Middle Column: Data Stream VFX */}
+                  <div className="hidden lg:flex col-span-4 flex-col items-center justify-center h-full min-h-[400px]">
+                     <div className="h-full w-[1px] bg-gradient-to-b from-transparent via-orange-500/20 to-transparent relative">
+                        <motion.div animate={{ top: ["0%", "100%"] }} transition={{ repeat: Infinity, duration: 5, ease: "linear" }} className="absolute w-1 h-32 bg-orange-500 glow-orange -left-[1.5px]" />
+                     </div>
+                     <div className="text-[10px] tech-header text-orange-500/30 vertical-text py-10 tracking-[15px] animate-pulse">L1_DATA_BUFFER</div>
+                     <div className="w-full flex flex-col gap-1 px-12 opacity-5">
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <div key={i} className="text-[7px] mono-info truncate leading-none">0x{Math.random().toString(16).substr(2, 32).toUpperCase()}</div>
+                        ))}
+                     </div>
+                  </div>
+
+                  {/* Right Column: AI Analysis */}
+                  <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                     <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, duration: 1 }}>
+                        <CommandWidget title="Sentinel-AI Risk Evaluation" sensorId="SENTINEL_V4_AI" status="ANALYZING">
+                           <RiskAnalysis score={riskScore} cmeEvents={cmeEvents} />
+                        </CommandWidget>
+                     </motion.div>
+                     <CommandWidget title="Geographic Response Analysis" sensorId="TK_IMPACT_A" status="READY">
+                        <p className="text-[10px] tech-header text-slate-600 mb-6 flex justify-between items-center group uppercase tracking-widest">
+                           <span>Regional Impact Matrix</span>
+                           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        </p>
+                        <div className="space-y-4">
+                           {getRegionImpacts().map((reg, i) => (
+                             <div key={i} className="flex justify-between items-center bg-white/[0.02] p-3 border border-white/5 group hover:bg-white/[0.05] transition-colors">
+                                <span className="text-[10px] tech-header text-slate-500 group-hover:text-slate-300">{reg.label}</span>
+                                <span className={`text-[10px] tech-header ${reg.color} glow-text`}>{reg.risk}</span>
+                             </div>
+                           ))}
+                        </div>
+                     </CommandWidget>
+                  </div>
+                 </div>
+               </div>
+            </section>
+
+            {/* SECTION 2: TERRA-SHIELD (Shield Situation Room) - Symmetrical V4.5 */}
+            <section className="snap-section flex items-center justify-center h-full">
+               <div className="section-content flex flex-col justify-center gap-12">
+                 
+                 {/* Sector Header Strip */}
+                 <div className="flex items-center justify-between border-b border-blue-500/20 pb-4 mb-4">
+                    <div className="flex items-center gap-4">
+                       <Globe size={20} className="text-blue-500 animate-pulse" />
+                       <h2 className="text-2xl tech-header text-white tracking-[8px]">TERRA-SHIELD_02</h2>
+                    </div>
+                    <div className="text-[8px] tech-header text-blue-500/60 tracking-[4px]">
+                       MAGNETOSPHERE_ARRAY // PHASE: ACTIVE
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-12 gap-8 items-center h-full">
+                  {/* Left Column: Shield Metrics */}
+                  <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
+                     <CommandWidget title="Magnetopause Status" sensorId="DSCOVR_EPIC_02" status="STABLE">
+                        <div className="space-y-6 py-4">
+                           <div className="flex justify-between items-end">
+                              <span className="text-[9px] tech-header text-slate-600">DIST_TO_SUN</span>
+                              <span className="text-lg tech-header text-blue-400">10.4 Re</span>
+                           </div>
+                           <div className="w-full h-1 bg-slate-900 overflow-hidden relative">
+                              <motion.div animate={{ width: ["70%", "85%", "70%"] }} transition={{ repeat: Infinity, duration: 4 }} className="absolute h-full bg-blue-500 shadow-[0_0_10px_#3b82f6]" />
+                           </div>
+                           <div className="flex justify-between items-end">
+                              <span className="text-[9px] tech-header text-slate-600">BOW_SHOCK_P</span>
+                              <span className="text-lg tech-header text-blue-400">2.1 nPa</span>
+                           </div>
+                           <div className="p-3 bg-blue-500/5 border border-blue-500/10">
+                              <p className="text-[7px] tech-header text-blue-500/60 mb-1 tracking-widest">DEFENSE_STRAT</p>
+                              <p className="text-[9px] font-bold text-slate-300">POLAR_CAP_CLOSED</p>
+                           </div>
+                        </div>
+                     </CommandWidget>
+                  </div>
+
+                  {/* Center Column: Earth Hub */}
+                  <div className="col-span-12 lg:col-span-6 h-[50vh] min-h-[400px] relative flex items-center justify-center group">
+                     <div className="absolute inset-0 pointer-events-none z-0">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] border border-blue-500/5 rounded-full" />
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 20, ease: "linear" }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] border-t border-blue-500/10 rounded-full" />
+                     </div>
+                     <Earth3D riskScore={riskScore} />
+                     
+                     {/* Floating Coordinate Labels */}
+                     <div className="absolute top-10 left-10 opacity-20 group-hover:opacity-60 transition-opacity">
+                        <p className="text-[8px] tech-header text-slate-500 tracking-[5px]">LAT: 0.0000</p>
+                        <p className="text-[8px] tech-header text-slate-500 tracking-[5px]">LNG: 0.0000</p>
+                     </div>
+                  </div>
+
+                  {/* Right Column: K-Index Evolution */}
+                  <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
+                     <CommandWidget title="Geomagnetic K-Index" sensorId="NOAA_KP_STREAM" status="LIVE">
+                        <div className="p-4 bg-black/60 border border-white/5 text-center mb-6 relative group overflow-hidden">
+                           <p className="text-[8px] tech-header text-slate-600 mb-2 tracking-[5px]">CURRENT_KP</p>
+                           <p className="text-6xl tech-header text-orange-500 glow-text">{kpIndex.length > 0 ? kpIndex[kpIndex.length-1].kp_index : '--'}</p>
+                        </div>
+                        <div className="h-[140px]">
+                          <DataCharts title="" data={kpIndex} dataKey="kp_index" color="#f97316" unit="Kp" />
+                        </div>
+                     </CommandWidget>
+                  </div>
+                 </div>
+               </div>
+            </section>
+
+            {/* SECTION 3: EVENT ARCHIVE (Mission Grid) - Dense V4.2 */}
+            <section className="snap-section flex flex-col h-full pt-24 pb-8">
+               <div className="section-content flex flex-col h-full">
+                  <div className="flex justify-between items-end mb-8 lg:mb-12">
+                     <div>
+                        <h2 className="text-3xl lg:text-4xl tech-header text-white glow-text mb-2 uppercase tracking-tighter">Mission <span className="text-slate-600">Archive</span></h2>
+                        <p className="text-[9px] mono-info text-orange-500/60 uppercase tracking-[8px]">Security Clearance L1 Access Active</p>
+                     </div>
+                     <div className="hidden md:flex gap-8">
+                        <FooterStat label="Ver" value="Sentinel-4.2-P" />
+                        <FooterStat label="AI" value="SENTINEL_V4" />
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-auto overflow-y-auto pr-2 no-scrollbar pb-6">
+                     {cmeEvents.slice(0, 16).map((evt, i) => (
+                       <motion.div 
+                        key={i} 
+                        initial={{ opacity: 0, y: 20 }} 
+                        whileInView={{ opacity: 1, y: 0 }} 
+                        transition={{ delay: i * 0.05 }}
+                        className="glass p-4 lg:p-5 border border-white/5 relative group cursor-pointer hover:bg-white/[0.03] transition-colors"
+                       >
+                          <div className="flex justify-between items-start mb-3">
+                             <div className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
+                             <span className="text-[7px] tech-header text-slate-700">LOG_{i+1000}</span>
+                          </div>
+                          <p className="text-[8px] tech-header text-orange-500 mb-1">CME_EVENT</p>
+                          <p className="text-[10px] font-black text-slate-300 mb-3 truncate">{evt.activityID}</p>
+                          <div className="pt-3 border-t border-white/5 flex justify-between items-center opacity-40">
+                             <span className="text-[7px] mono-info text-slate-600">{evt.startTime?.split('T')[0]}</span>
+                             <span className="text-[7px] tech-header">STABLE</span>
+                          </div>
+                       </motion.div>
+                     ))}
+                  </div>
+
+                  <footer className="mt-auto pt-6 border-t border-white/5 flex flex-row items-center justify-between opacity-30 group">
+                     <p className="text-[7px] tech-header text-slate-800 tracking-[8px] group-hover:text-slate-600 transition-colors">Mission Control Command // TK Terminal Hub</p>
+                     <div className="flex gap-8">
+                        <FooterStat label="Status" value="OPERATIONAL" />
+                        <FooterStat label="V" value="4.2" />
+                     </div>
+                  </footer>
+               </div>
+            </section>
+          </main>
+        </>
+      )}
     </div>
   );
 }
 
-// Alt bileşenler
-const NavButton = ({ label, active, onClick }) => (
-  <button 
-    onClick={onClick}
-    className={`text-[11px] font-black uppercase tracking-[3px] transition-all hover:text-white relative group ${active ? 'text-white' : 'text-slate-500'}`}
-  >
-    {label}
-    <div className={`absolute -bottom-2 left-0 w-full h-[2px] bg-orange-500 transition-all scale-x-0 group-hover:scale-x-100 ${active ? 'scale-x-100' : ''}`} />
-  </button>
+// Sub-components
+const NavOption = ({ label, icon: Icon, active }) => (
+  <div className={`flex flex-col items-center gap-1 group cursor-pointer transition-all ${active ? 'text-white' : 'text-slate-600 hover:text-slate-400'}`}>
+    <div className="flex flex-row items-center gap-2">
+       {active && <Icon size={12} className="text-orange-500 animate-pulse" />}
+       <span className="text-[9px] tech-header tracking-widest">{label}</span>
+    </div>
+    <motion.div 
+      initial={false}
+      animate={{ scaleX: active ? 1 : 0 }}
+      className="h-[1px] w-full bg-orange-500 glow-orange" 
+    />
+  </div>
 );
 
-const IconButton = ({ icon: Icon, onClick, badge }) => (
-  <button onClick={onClick} className="w-12 h-12 rounded-2xl bg-slate-900/50 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/10 hover:bg-slate-900 transition-all shadow-2xl relative">
-    <Icon size={20} />
+const ScrollHint = ({ label }) => (
+  <motion.div 
+    animate={{ y: [0, 10, 0] }}
+    transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+    className="mt-20 flex flex-col items-center gap-4 opacity-40 group cursor-pointer"
+  >
+    <div className="text-[9px] tech-header tracking-[6px] group-hover:text-orange-500 transition-colors uppercase">{label}</div>
+    <ChevronDown size={28} className="text-white group-hover:text-orange-500 transition-all" />
+  </motion.div>
+);
+
+const FooterStat = ({ label, value }) => (
+  <div className="flex flex-row gap-3 items-center">
+    <span className="text-[9px] tech-header text-slate-700">{label}</span>
+    <span className="text-[10px] font-black text-slate-400">{value}</span>
+  </div>
+);
+
+const IconButton = ({ icon: Icon, badge }) => (
+  <button className="p-2.5 bg-white/[0.03] border border-white/5 text-slate-500 hover:text-white hover:border-orange-500/30 transition-all relative group overflow-hidden">
+    <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/5 transition-colors" />
+    <Icon size={18} className="relative z-10" />
     {badge > 0 && (
-      <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[8px] font-black text-white flex items-center justify-center">{badge}</span>
+      <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[8px] font-black text-black flex items-center justify-center glow-orange z-20">
+        {badge}
+      </span>
     )}
   </button>
-);
-
-const MetricBox = ({ label, value }) => (
-  <div className="bg-black/40 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/5 text-center shadow-lg">
-    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">{label}</p>
-    <p className="text-xs font-black text-white">{value}</p>
-  </div>
-);
-
-const FooterStat = ({ label, value, color = 'text-slate-400' }) => (
-  <div className="flex items-center gap-3 whitespace-nowrap">
-    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
-    <span className={`text-[11px] font-black ${color}`}>{value}</span>
-  </div>
-);
-
-const RegionImpact = ({ label, risk, color }) => (
-  <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-    <span className="text-[10px] font-bold text-slate-500">{label}</span>
-    <span className={`text-[10px] font-black ${color}`}>{risk}</span>
-  </div>
-);
-
-const SettingRow = ({ label, value }) => (
-  <div className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
-    <span className="text-xs text-slate-400">{label}</span>
-    <span className="text-xs font-bold text-white">{value}</span>
-  </div>
 );
 
 export default App;

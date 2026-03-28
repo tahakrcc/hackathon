@@ -11,7 +11,7 @@ const SolarOverlay = ({ imageUrl, riskScore, cmeEvents = [] }) => {
   const latestCmeId = cmeEvents.length > 0 ? cmeEvents[0].activityID : null;
 
   return (
-    <div className="relative w-full h-[500px] flex items-center justify-center rounded-2xl overflow-hidden glass border border-slate-800/50 group">
+    <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden glass border border-slate-800/50 group">
       {imageUrl ? (
         <img 
           src={imageUrl} 

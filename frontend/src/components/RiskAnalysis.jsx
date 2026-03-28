@@ -21,13 +21,13 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className={`p-6 rounded-2xl glass ${status.border} ${status.bg} border-t-4`}>
+      <div className={`p-6 glass ${status.border} ${status.bg} border-t-4`}>
         <div className="flex justify-between items-start mb-6">
           <div>
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Risk Değerlendirmesi</h3>
             <p className={`text-2xl font-black ${status.color}`}>{status.label}</p>
           </div>
-          <div className={`${status.bg} p-2 rounded-lg`}>
+          <div className={`${status.bg} p-2 flex items-center justify-center`}>
             {score >= 50 ? <AlertTriangle className={status.color} /> : <Shield className={status.color} />}
           </div>
         </div>
@@ -48,14 +48,14 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
       </div>
 
       {/* AI Analiz Motoru */}
-      <div className="glass p-6 rounded-2xl border border-slate-800/50">
+      <div className="glass p-6 border border-slate-800/50">
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
           <Zap size={14} className="text-orange-500" />
           AI Analiz Motoru
         </h3>
         
         <div className="space-y-4">
-          <div className="flex gap-4 p-3 rounded-xl bg-slate-900/50 border border-slate-800/30">
+          <div className="flex gap-4 p-3 bg-slate-900/50 border border-slate-800/30">
             <Info size={16} className="text-blue-400 mt-1 shrink-0" />
             <p className="text-xs text-slate-400 leading-relaxed">
               {getAIAnalysis(score)}
@@ -83,7 +83,7 @@ const RiskAnalysis = ({ score = 0, cmeEvents = [] }) => {
 };
 
 const SystemIndicator = ({ label, status, color }) => (
-  <div className="p-4 rounded-xl glass border border-slate-800/50">
+  <div className="p-4 glass border border-slate-800/50">
     <p className="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tighter">{label}</p>
     <div className="flex items-center gap-2">
       <div className={`w-1.5 h-1.5 rounded-full bg-${color}-500 animate-pulse`} />
