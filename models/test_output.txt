@@ -1,0 +1,34 @@
+==================================================
+TEST SONUCLARI (52577 ornek)
+==================================================
+MAE  (Ort. Mutlak Hata) : 7.19 nT
+RMSE (Kok Ort. Kare Hata): 9.23 nT
+Korelasyon (r)           : 0.5783
+
+Seviye Dogrulugu: 99.7% (52417/52577)
+  NORMAL    : 52417/52417 dogru (100.0%)
+  WARNING   : 0/160 dogru (0.0%)
+  CRITICAL  : veri yok
+
+Ornek Tahminler:
+    Gercek     Tahmin     Fark     G.Seviye     T.Seviye
+      -9.0       -6.8      2.2       NORMAL       NORMAL
+     -24.0      -17.9      6.1       NORMAL       NORMAL
+      -2.0       -4.8      2.8       NORMAL       NORMAL
+      -8.0      -11.2      3.2       NORMAL       NORMAL
+      -3.0      -16.3     13.3       NORMAL       NORMAL
+       2.0       -7.3      9.3       NORMAL       NORMAL
+     -13.0      -19.5      6.5       NORMAL       NORMAL
+      -9.0      -14.4      5.4       NORMAL       NORMAL
+      -5.0      -11.8      6.8       NORMAL       NORMAL
+      -2.0      -12.0     10.0       NORMAL       NORMAL
+     -17.0      -16.1      0.9       NORMAL       NORMAL
+       1.0      -11.4     12.4       NORMAL       NORMAL
+     -30.0      -17.5     12.5       NORMAL       NORMAL
+      17.0        0.6     16.4       NORMAL       NORMAL
+      -2.0       -9.4      7.4       NORMAL       NORMAL
+     -17.0      -15.6      1.4       NORMAL       NORMAL
+       1.0       -5.0      6.0       NORMAL       NORMAL
+       3.0      -12.3     15.3       NORMAL       NORMAL
+      -6.0      -11.0      5.0       NORMAL       NORMAL
+      -7.0      -11.2      4.2       NORMAL       NORMAL

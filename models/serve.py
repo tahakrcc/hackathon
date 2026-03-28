@@ -3,7 +3,9 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 import joblib
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List
 import uvicorn
@@ -42,6 +44,13 @@ class PredictionRequest(BaseModel):
 def health_check():
     return {"status": "ok", "message": "Solar Sentinel AI is running."}
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    body = await request.body()
+    print(f"❌ Validation Error: {exc.errors()}")
+    print(f"❌ Raw Body Data: {body}")
+    return JSONResponse(status_code=422, content={"detail": exc.errors(), "body": str(body)})
+
 @app.post("/api/predict")
 def predict_symh(request: PredictionRequest):
     if len(request.history_windows) != 12:
@@ -58,11 +67,15 @@ def predict_symh(request: PredictionRequest):
     # Scale the input
     try:
         scaled_input = scaler_x.transform(df[features])
+        # KRİTİK: Eğitim aralığı dışındaki değerleri 0-1'e kırp
+        scaled_input = np.clip(scaled_input, 0.0, 1.0)
         # Reshape to (1, 12, 4) -> (batch_size, time_steps, features)
         model_ready = np.expand_dims(scaled_input, axis=0)
 
         # Run Prediction
         pred_scaled = model.predict(model_ready, verbose=0)
+        # Linear çıkış kullandığımız için 0-1'e kırp
+        pred_scaled = np.clip(pred_scaled, 0.0, 1.0)
 
         # Inverse transform to get actual Sym/H value
         pred_final = scaler_y.inverse_transform(pred_scaled)
@@ -94,4 +107,4 @@ def predict_symh(request: PredictionRequest):
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 if __name__ == "__main__":
-    uvicorn.run("serve:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("serve:app", host="0.0.0.0", port=8000, reload=True)

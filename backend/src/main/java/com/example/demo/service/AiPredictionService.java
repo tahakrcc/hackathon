@@ -49,20 +49,30 @@ public class AiPredictionService {
                         .build());
             }
 
-            AiPredictionRequestDto requestDto = AiPredictionRequestDto.builder()
-                    .historyWindows(windows)
-                    .build();
+            // JSON'u manuel oluşturarak Jackson serileştirme sorunlarını atlıyoruz
+            StringBuilder jsonBuilder = new StringBuilder();
+            jsonBuilder.append("{\"history_windows\": [");
+            for (int i = 0; i < windows.size(); i++) {
+                AiPredictionRequestDto.SolarDataWindow w = windows.get(i);
+                jsonBuilder.append(String.format(java.util.Locale.US, 
+                    "{\"bt\": %.2f, \"bz\": %.2f, \"speed\": %.2f, \"density\": %.2f}", 
+                    w.getBt(), w.getBz(), w.getSpeed(), w.getDensity()));
+                if (i < windows.size() - 1) jsonBuilder.append(", ");
+            }
+            jsonBuilder.append("]}");
+            String jsonPayload = jsonBuilder.toString();
 
-            // FastAPI sunucusuna POST isteği atılıyor
-            return restClient.post()
-                    .uri("http://localhost:8000/api/predict")
-                    .body(requestDto)
-                    .retrieve()
-                    .body(AiPredictionDto.class);
+            // RestClient yerine battle-tested RestTemplate kullaniyoruz
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            org.springframework.http.HttpEntity<String> requestEntity = new org.springframework.http.HttpEntity<>(jsonPayload, headers);
+            
+            return restTemplate.postForObject("http://localhost:8000/api/predict", requestEntity, AiPredictionDto.class);
 
         } catch (Exception e) {
             log.error("AI Mikroservisine erişilemedi: {}", e.getMessage());
-            return getDefaultPrediction("SUNUCU HATASI");
+            return getDefaultPrediction("HATA: " + e.getMessage());
         }
     }
 
