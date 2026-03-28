@@ -1,0 +1,82 @@
+:root {
+  --bg-deep: #05070a;
+  --bg-card: rgba(15, 20, 30, 0.7);
+  --accent-orange: #ffab40;
+  --accent-green: #00e676;
+  --accent-purple: #7c4dff;
+  --text-primary: #f8faff;
+  --text-secondary: #94a3b8;
+  --neon-glow-orange: 0 0 20px rgba(255, 171, 64, 0.4);
+  --neon-glow-green: 0 0 20px rgba(0, 230, 118, 0.4);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Outfit', sans-serif;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(20, 30, 60, 0.3) 0%, transparent 70%),
+    url("https://www.transparenttextures.com/patterns/stardust.png");
+}
+
+.glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.glow-orange { filter: drop-shadow(0 0 8px var(--accent-orange)); }
+.glow-green { filter: drop-shadow(0 0 8px var(--accent-green)); }
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s infinite ease-in-out;
+}
+
+.risk-level {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.risk-label {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+}
