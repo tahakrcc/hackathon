@@ -20,6 +20,9 @@ const Earth = ({ riskScore }) => {
     if (cloudsRef.current) cloudsRef.current.rotation.y += delta * 0.07;
   });
 
+  // Dynamic color based on risk
+  const shieldColor = riskScore > 70 ? '#f97316' : (riskScore > 35 ? '#3b82f6' : '#4ade80');
+
   return (
     <group>
       <mesh ref={earthRef}>
@@ -34,7 +37,7 @@ const Earth = ({ riskScore }) => {
         />
       </mesh>
 
-      {/* Cloud Layer - Procedural or Local if exists, currently using same map as fallback to avoid crash */}
+      {/* Cloud Layer */}
       <mesh ref={cloudsRef} scale={[1.02, 1.02, 1.02]}>
         <sphereGeometry args={[2, 64, 64]} />
         <meshPhongMaterial 
@@ -47,17 +50,23 @@ const Earth = ({ riskScore }) => {
         />
       </mesh>
 
-      {/* Atmospheric Glow (Rim) */}
-      <Atmosphere scale={1.2} color="#4ade80" intensity={riskScore > 50 ? 1.5 : 0.8} />
+      {/* Atmospheric Glow (Rim) - Dynamic Shield */}
+      <Atmosphere scale={1.15} color={shieldColor} intensity={riskScore > 50 ? 1.8 : 1.0} riskScore={riskScore} />
     </group>
   );
 };
 
-const Atmosphere = ({ scale, color, intensity }) => {
+const Atmosphere = ({ scale, color, intensity, riskScore }) => {
   const uniforms = useMemo(() => ({
     uColor: { value: new THREE.Color(color) },
     uIntensity: { value: intensity },
-  }), [color, intensity]);
+    uTime: { value: 0 },
+    uRisk: { value: riskScore / 100 },
+  }), [color, intensity, riskScore]);
+
+  useFrame((state) => {
+    if (uniforms.uTime) uniforms.uTime.value = state.clock.getElapsedTime();
+  });
 
   return (
     <mesh scale={scale}>
@@ -75,11 +84,16 @@ const Atmosphere = ({ scale, color, intensity }) => {
         fragmentShader={`
           uniform vec3 uColor;
           uniform float uIntensity;
+          uniform float uTime;
+          uniform float uRisk;
           varying vec3 vNormal;
           varying vec3 vWorldPosition;
           void main() {
             float rim = 1.0 - max(0.0, dot(vNormal, normalize(cameraPosition - vWorldPosition)));
-            gl_FragColor = vec4(uColor * pow(rim, 6.0) * uIntensity, pow(rim, 6.0) * uIntensity);
+            float pulse = 0.8 + 0.2 * sin(uTime * (1.0 + uRisk * 5.0));
+            // Power of 12.0 for a significantly thinner, more professional edge
+            float alpha = pow(rim, 12.0) * uIntensity * pulse;
+            gl_FragColor = vec4(uColor, alpha);
           }
         `}
         uniforms={uniforms}

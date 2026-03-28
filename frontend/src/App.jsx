@@ -8,7 +8,8 @@ import {
   Globe,
   Database,
   Shield,
-  Activity
+  Activity,
+  Target
 } from 'lucide-react';
 import { useSolarStore } from './store/solarStore';
 import Sun3D from './components/Sun3D';
@@ -34,6 +35,7 @@ function App() {
 
   const [activeSection, setActiveSection] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
+  const [selectedEventIndex, setSelectedEventIndex] = useState(0);
   const containerRef = useRef(null);
 
   const { scrollYProgress: rawScrollProgress } = useScroll({ container: containerRef });
@@ -210,25 +212,29 @@ function App() {
 
                   {/* Right Column: AI Analysis */}
                   <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-                     <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, duration: 1 }}>
+                     <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, duration: 1 }} className="flex-1">
                         <CommandWidget title="Sentinel-AI Risk Evaluation" sensorId="SENTINEL_V4_AI" status="ANALYZING">
-                           <RiskAnalysis score={riskScore} cmeEvents={cmeEvents} />
+                           <div className="min-h-[220px] lg:min-h-[280px]">
+                              <RiskAnalysis score={riskScore} cmeEvents={cmeEvents} />
+                           </div>
                         </CommandWidget>
                      </motion.div>
-                     <CommandWidget title="Geographic Response Analysis" sensorId="TK_IMPACT_A" status="READY">
-                        <p className="text-[10px] tech-header text-slate-600 mb-6 flex justify-between items-center group uppercase tracking-widest">
-                           <span>Regional Impact Matrix</span>
-                           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        </p>
-                        <div className="space-y-4">
-                           {getRegionImpacts().map((reg, i) => (
-                             <div key={i} className="flex justify-between items-center bg-white/[0.02] p-3 border border-white/5 group hover:bg-white/[0.05] transition-colors">
-                                <span className="text-[10px] tech-header text-slate-500 group-hover:text-slate-300">{reg.label}</span>
-                                <span className={`text-[10px] tech-header ${reg.color} glow-text`}>{reg.risk}</span>
-                             </div>
-                           ))}
-                        </div>
-                     </CommandWidget>
+                     <div className="flex-1">
+                        <CommandWidget title="Geographic Response Analysis" sensorId="TK_IMPACT_A" status="READY">
+                           <p className="text-[10px] tech-header text-slate-600 mb-6 flex justify-between items-center group uppercase tracking-widest">
+                              <span>Regional Impact Matrix</span>
+                              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                           </p>
+                           <div className="space-y-4">
+                              {getRegionImpacts().map((reg, i) => (
+                                <div key={i} className="flex justify-between items-center bg-white/[0.02] p-3 border border-white/5 group hover:bg-white/[0.05] transition-colors">
+                                   <span className="text-[10px] tech-header text-slate-500 group-hover:text-slate-300">{reg.label}</span>
+                                   <span className={`text-[10px] tech-header ${reg.color} glow-text`}>{reg.risk}</span>
+                                </div>
+                              ))}
+                           </div>
+                        </CommandWidget>
+                     </div>
                   </div>
                  </div>
                </div>
@@ -274,15 +280,17 @@ function App() {
                   </div>
 
                   {/* Center Column: Earth Hub */}
-                  <div className="col-span-12 lg:col-span-6 h-[50vh] min-h-[400px] relative flex items-center justify-center group">
-                     <div className="absolute inset-0 pointer-events-none z-0">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] border border-blue-500/5 rounded-full" />
-                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 20, ease: "linear" }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] border-t border-blue-500/10 rounded-full" />
+                  <div className="col-span-12 lg:col-span-6 h-[60vh] min-h-[500px] relative flex items-center justify-center group overflow-visible">
+                     <div className="absolute inset-0 pointer-events-none z-0 overflow-visible">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[130%] h-[130%] border border-blue-500/5 rounded-full" />
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 25, ease: "linear" }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[115%] h-[115%] border-t border-blue-500/10 rounded-full" />
                      </div>
-                     <Earth3D riskScore={riskScore} />
+                     <div className="w-full h-full relative z-10 overflow-visible flex items-center justify-center">
+                       <Earth3D riskScore={riskScore} />
+                     </div>
                      
                      {/* Floating Coordinate Labels */}
-                     <div className="absolute top-10 left-10 opacity-20 group-hover:opacity-60 transition-opacity">
+                     <div className="absolute top-0 left-0 opacity-20 group-hover:opacity-60 transition-opacity">
                         <p className="text-[8px] tech-header text-slate-500 tracking-[5px]">LAT: 0.0000</p>
                         <p className="text-[8px] tech-header text-slate-500 tracking-[5px]">LNG: 0.0000</p>
                      </div>
@@ -304,48 +312,136 @@ function App() {
                </div>
             </section>
 
-            {/* SECTION 3: EVENT ARCHIVE (Mission Grid) - Dense V4.2 */}
-            <section className="snap-section flex flex-col h-full pt-24 pb-8">
+            {/* SECTION 3: MISSION ARCHIVE (Timeline & Inspector) - Cinematic V4.6 */}
+            <section className="snap-section flex flex-col h-full pt-20 pb-8">
                <div className="section-content flex flex-col h-full">
-                  <div className="flex justify-between items-end mb-8 lg:mb-12">
+                  
+                  {/* Archive Header */}
+                  <div className="flex justify-between items-end mb-10 border-b border-orange-500/20 pb-6">
                      <div>
-                        <h2 className="text-3xl lg:text-4xl tech-header text-white glow-text mb-2 uppercase tracking-tighter">Mission <span className="text-slate-600">Archive</span></h2>
-                        <p className="text-[9px] mono-info text-orange-500/60 uppercase tracking-[8px]">Security Clearance L1 Access Active</p>
+                        <div className="flex items-center gap-4 mb-2">
+                           <Shield size={20} className="text-orange-500 animate-pulse" />
+                           <h2 className="text-4xl tech-header text-white glow-text uppercase tracking-tighter">Mission <span className="text-slate-600">Archive</span></h2>
+                        </div>
+                        <p className="text-[9px] mono-info text-orange-500/60 uppercase tracking-[8px]">Archive Access: LEVEL_01_SECURE // SYSTEM_STABLE</p>
                      </div>
-                     <div className="hidden md:flex gap-8">
-                        <FooterStat label="Ver" value="Sentinel-4.2-P" />
-                        <FooterStat label="AI" value="SENTINEL_V4" />
+                     <div className="hidden md:flex gap-12 text-right">
+                        <div>
+                           <p className="text-[7px] tech-header text-slate-700">DB_CAPACITY</p>
+                           <p className="text-[10px] font-black text-slate-400">98.4 PB</p>
+                        </div>
+                        <div>
+                           <p className="text-[7px] tech-header text-slate-700">LOG_RETENTION</p>
+                           <p className="text-[10px] font-black text-slate-400">SYNCED_L1</p>
+                        </div>
                      </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-auto overflow-y-auto pr-2 no-scrollbar pb-6">
-                     {cmeEvents.slice(0, 16).map((evt, i) => (
-                       <motion.div 
-                        key={i} 
-                        initial={{ opacity: 0, y: 20 }} 
-                        whileInView={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: i * 0.05 }}
-                        className="glass p-4 lg:p-5 border border-white/5 relative group cursor-pointer hover:bg-white/[0.03] transition-colors"
-                       >
-                          <div className="flex justify-between items-start mb-3">
-                             <div className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
-                             <span className="text-[7px] tech-header text-slate-700">LOG_{i+1000}</span>
-                          </div>
-                          <p className="text-[8px] tech-header text-orange-500 mb-1">CME_EVENT</p>
-                          <p className="text-[10px] font-black text-slate-300 mb-3 truncate">{evt.activityID}</p>
-                          <div className="pt-3 border-t border-white/5 flex justify-between items-center opacity-40">
-                             <span className="text-[7px] mono-info text-slate-600">{evt.startTime?.split('T')[0]}</span>
-                             <span className="text-[7px] tech-header">STABLE</span>
-                          </div>
-                       </motion.div>
-                     ))}
+                  <div className="grid grid-cols-12 gap-10 flex-1 min-h-0">
+                     {/* Left Column: Vertical Chronology Feed */}
+                     <div className="col-span-12 lg:col-span-5 flex flex-col h-full overflow-hidden">
+                        <div className="text-[8px] tech-header text-slate-600 mb-4 px-4 border-l-2 border-orange-500/30">CHRONOLOGICAL_SEQUENCE_FEED</div>
+                        <div className="flex-1 overflow-y-auto pr-4 space-y-4 no-scrollbar pb-8">
+                           {cmeEvents.slice(0, 20).map((evt, i) => {
+                              const severity = i % 5 === 0 ? 'SEVERE' : (i % 3 === 0 ? 'MODERATE' : 'NORMAL');
+                              const gScale = i % 5 === 0 ? 'G3+' : (i % 3 === 0 ? 'G2' : 'G1');
+                              return (
+                                 <motion.div 
+                                    key={i} 
+                                    initial={{ opacity: 0, x: -20 }} 
+                                    whileInView={{ opacity: 1, x: 0 }} 
+                                    transition={{ delay: i * 0.03 }}
+                                    onClick={() => setSelectedEventIndex(i)}
+                                    className={`flex group cursor-pointer transition-all ${selectedEventIndex === i ? 'scale-[1.02]' : ''}`}
+                                 >
+                                    {/* Timeline Marker */}
+                                    <div className="flex flex-col items-center mr-4 w-6">
+                                       <div className={`w-2 h-2 ${selectedEventIndex === i ? 'bg-orange-500 shadow-[0_0_10px_#f97316]' : (i % 5 === 0 ? 'bg-orange-500 animate-ping' : 'bg-slate-800')} border border-white/20`} />
+                                       <div className="flex-1 w-[1px] bg-slate-800/50 group-hover:bg-orange-500/30 transition-colors" />
+                                    </div>
+                                    
+                                    {/* Log Minimal Card */}
+                                    <div className={`flex-1 glass p-4 border transition-all flex justify-between items-center ${selectedEventIndex === i ? 'border-orange-500/40 bg-orange-500/[0.05]' : 'border-white/5 bg-black/40 group-hover:border-orange-500/20 group-hover:bg-orange-500/[0.02]'}`}>
+                                       <div>
+                                          <div className="flex items-center gap-3 mb-1">
+                                             <span className={`text-[6px] tech-header ${selectedEventIndex === i ? 'text-orange-500' : 'text-slate-700'}`}>LOG_{i+1024}</span>
+                                             {selectedEventIndex === i && <span className="text-[6px] tech-header text-orange-500 animate-pulse">[ ACTIVE_SELECTION ]</span>}
+                                             {selectedEventIndex !== i && <span className={`text-[7px] font-black ${severity === 'SEVERE' ? 'text-orange-500' : 'text-slate-500'}`}>{severity}</span>}
+                                          </div>
+                                          <p className={`text-[10px] font-black truncate w-48 ${selectedEventIndex === i ? 'text-white' : 'text-slate-300'}`}>{evt.activityID}</p>
+                                          <p className="text-[7px] mono-info text-slate-600 mt-1">{evt.startTime?.split('T')[0]} // {evt.startTime?.split('T')[1]?.replace('Z','')}</p>
+                                       </div>
+                                       <div className="text-right">
+                                          <p className={`text-lg tech-header transition-colors ${selectedEventIndex === i ? 'text-orange-500' : 'text-slate-700 group-hover:text-orange-500/40'}`}>{gScale}</p>
+                                          <p className="text-[6px] mono-info text-slate-800">CLASS</p>
+                                       </div>
+                                    </div>
+                                 </motion.div>
+                              );
+                           })}
+                        </div>
+                     </div>
+
+                     {/* Right Column: Event Deep-Inspector */}
+                     <div className="col-span-12 lg:col-span-7 flex flex-col h-full min-h-[500px]">
+                        <CommandWidget title="Deep-Archive Event Analyst" sensorId="ANALYSIS_BOT_L1" status="EXTRACTION_READY">
+                           <div className="p-8 bg-black/40 border border-white/5 relative group overflow-hidden h-full flex flex-col min-h-[450px]">
+                              {/* Inspector Visuals */}
+                              <div className="flex flex-col md:flex-row justify-between items-start gap-10 mb-8">
+                                 <div className="space-y-10 flex-1 w-full overflow-hidden">
+                                    <div className="overflow-hidden">
+                                       <p className="text-[8px] tech-header text-orange-500/60 mb-2 tracking-[3px]">PRIMARY_VECTOR_ID</p>
+                                       <p className="text-xl lg:text-3xl font-black text-white tracking-widest break-all">{cmeEvents[selectedEventIndex]?.activityID || 'LOADING...'}</p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-10">
+                                       <div>
+                                          <p className="text-[7px] tech-header text-slate-700 uppercase mb-2">Extraction Speed</p>
+                                          <p className="text-xl tech-header text-slate-300">882.4 km/s</p>
+                                          <div className="w-full h-[2px] bg-slate-900 mt-2 overflow-hidden">
+                                             <motion.div initial={{ width: 0 }} whileInView={{ width: "84%" }} className="h-full bg-orange-500/40" />
+                                          </div>
+                                       </div>
+                                       <div>
+                                          <p className="text-[7px] tech-header text-slate-700 uppercase mb-2">Impact Confidence</p>
+                                          <p className="text-xl tech-header text-slate-300">92.1%</p>
+                                          <div className="w-full h-[2px] bg-slate-900 mt-2 overflow-hidden">
+                                             <motion.div initial={{ width: 0 }} whileInView={{ width: "92%" }} className="h-full bg-blue-500/40" />
+                                          </div>
+                                       </div>
+                                    </div>
+
+                                    <div className="p-5 bg-orange-500/5 border border-orange-500/20">
+                                       <p className="text-[7px] tech-header text-orange-500/60 mb-2">SYSTEM_RESPONSE_CODES</p>
+                                       <div className="flex gap-4">
+                                          <span className="text-[8px] font-black text-orange-500">SHIELD_LVL_INC</span>
+                                          <span className="text-[8px] font-black text-slate-600">SAT_LINK_REDUNDANT</span>
+                                          <span className="text-[8px] font-black text-slate-600">GRID_PROTECT_V3</span>
+                                       </div>
+                                    </div>
+                                 </div>
+
+                                 {/* Circular Radar Placeholder Visual */}
+                                 <div className="w-40 h-40 border border-white/10 rounded-full flex items-center justify-center relative">
+                                    <div className="w-32 h-32 border border-orange-500/20 rounded-full animate-pulse" />
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/5 to-transparent rounded-full animate-spin-slow" />
+                                    <Target size={24} className="text-orange-500/40" />
+                                 </div>
+                              </div>
+                              
+                              <div className="mt-auto border-t border-white/5 pt-6 opacity-30">
+                                 <p className="text-[8px] tech-header text-slate-700 italic">"Log extraction completed at L1 satellite link. All event parameters verified by Sentinel-AI V4. Security clearance active for deep archive read."</p>
+                              </div>
+                           </div>
+                        </CommandWidget>
+                     </div>
                   </div>
 
-                  <footer className="mt-auto pt-6 border-t border-white/5 flex flex-row items-center justify-between opacity-30 group">
+                  <footer className="mt-8 pt-6 border-t border-white/5 flex flex-row items-center justify-between opacity-30 group">
                      <p className="text-[7px] tech-header text-slate-800 tracking-[8px] group-hover:text-slate-600 transition-colors">Mission Control Command // TK Terminal Hub</p>
                      <div className="flex gap-8">
-                        <FooterStat label="Status" value="OPERATIONAL" />
-                        <FooterStat label="V" value="4.2" />
+                        <FooterStat label="Ver" value="Sentinel-4.2-P" />
+                        <FooterStat label="V" value="4.6" />
                      </div>
                   </footer>
                </div>
