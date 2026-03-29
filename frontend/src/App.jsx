@@ -222,7 +222,7 @@ function App() {
                 <Zap size={22} className="neon-text-cyan" />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-xl tech-header neon-text-cyan tracking-[4px]">Solar Sentinel</h1>
+                <h1 className="text-xl tech-header neon-text-cyan tracking-[4px]">Solar Observer</h1>
                 <p className="text-[9px] tech-header text-neon-cyan/60 uppercase tracking-[2px]">SİBER_OS v1.0 // ÇEVRİMİÇİ</p>
               </div>
             </div>

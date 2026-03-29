@@ -1,4 +1,4 @@
-# 🛰️ Solar Sentinel: Backend Integration Guide (V1.1)
+# 🛰️ Solar Observer: Backend Integration Guide (V1.1)
 
 This document serves as the **Technical Architecture Blueprint** for backend enhancements required by the **Phase 12 (Elite Visuals)** and future operational features. 
 

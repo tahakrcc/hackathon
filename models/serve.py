@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from typing import List
 import uvicorn
 
-app = FastAPI(title="Solar Sentinel AI", version="1.0.0", description="Sym/H prediction using LSTM")
+app = FastAPI(title="Solar Observer AI", version="1.0.0", description="Sym/H prediction using LSTM")
 
 # Setup paths (ensure we are loading relative to this script's location)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -42,7 +42,7 @@ class PredictionRequest(BaseModel):
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "message": "Solar Sentinel AI is running."}
+    return {"status": "ok", "message": "Solar Observer AI is running."}
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):

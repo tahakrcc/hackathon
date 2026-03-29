@@ -53,7 +53,7 @@ public class MailService {
 
             String htmlContent = String.format(
                 "<div style='font-family: Arial, sans-serif; background-color: #0c0c0c; color: #ffffff; padding: 40px; border: 2px solid #ff003c; border-radius: 12px;'>" +
-                "  <h1 style='color: #ff003c; text-transform: uppercase; letter-spacing: 5px;'>KIRMIZI ALARM - SOLAR SENTINEL</h1>" +
+                "  <h1 style='color: #ff003c; text-transform: uppercase; letter-spacing: 5px;'>KIRMIZI ALARM - SOLAR OBSERVER</h1>" +
                 "  <hr style='border: 0.5px solid #333; margin: 20px 0;'>" +
                 "  <p style='font-size: 14px; color: #888;'>Sistem tarafından otomatik olarak oluşturulan acil durum raporudur.</p>" +
                 "  <div style='background-color: #1a1a1a; padding: 20px; border-radius: 8px; margin-top: 20px;'>" +
@@ -69,7 +69,7 @@ public class MailService {
                 "      <li>Hassas yörünge manevralarını durdurun.</li>" +
                 "    </ul>" +
                 "  </div>" +
-                "  <p style='font-size: 10px; color: #555; margin-top: 40px;'>Bu e-posta Solar Sentinel v1.5 SİBER_OS üzerinden gönderilmiştir.</p>" +
+                "  <p style='font-size: 10px; color: #555; margin-top: 40px;'>Bu e-posta Solar Observer v1.5 SİBER_OS üzerinden gönderilmiştir.</p>" +
                 "</div>",
                 intensity, aiComment, impactTime
             );

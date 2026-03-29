@@ -69,14 +69,14 @@ const SettingsPanel = ({ isOpen, onClose, onRefreshData }) => {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
-              
+
               {/* Bildirim Ayarları */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                   <Mail size={14} className="text-cyan-400" />
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Bildirim İstasyonu</span>
                 </div>
-                
+
                 <div className="p-4 bg-white/5 border border-white/5 rounded space-y-4">
                   <div className="flex flex-wrap gap-2 min-h-[30px]">
                     {recipientMails.map((m, idx) => (
@@ -88,9 +88,9 @@ const SettingsPanel = ({ isOpen, onClose, onRefreshData }) => {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="flex gap-2">
-                    <input 
+                    <input
                       type="email"
                       value={newMail}
                       onChange={(e) => setNewMail(e.target.value)}
@@ -107,7 +107,7 @@ const SettingsPanel = ({ isOpen, onClose, onRefreshData }) => {
 
               {/* Ekran Ayarları */}
               <div className="space-y-4">
-                 <div className="flex items-center gap-2 border-b border-white/5 pb-2">
+                <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                   <Monitor size={14} className="text-cyan-400" />
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Ekran & HUD</span>
                 </div>
@@ -117,18 +117,18 @@ const SettingsPanel = ({ isOpen, onClose, onRefreshData }) => {
 
               {/* Güvenlik & Test */}
               <div className="space-y-4">
-                 <div className="flex items-center gap-2 border-b border-white/5 pb-2">
+                <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                   <AlertOctagon size={14} className="text-red-500" />
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Sistem Testi</span>
                 </div>
-                <button 
+                <button
                   onClick={() => { onClose(); triggerAlertSimulation(); }}
                   className="w-full p-4 bg-red-600/10 border border-red-600/40 text-red-500 text-[10px] font-black tracking-[4px] hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-3"
                 >
                   <Zap size={14} className="fill-current" />
                   KIRMIZI ALARM SİMÜLASYONU
                 </button>
-                <button 
+                <button
                   onClick={downloadSystemData}
                   className="w-full p-4 bg-white/5 border border-white/10 text-slate-400 text-[10px] font-black tracking-[4px] hover:bg-white/10 transition-all flex items-center justify-center gap-3"
                 >
@@ -139,7 +139,7 @@ const SettingsPanel = ({ isOpen, onClose, onRefreshData }) => {
             </div>
 
             <div className="p-6 border-t border-white/5 bg-black/40 text-center">
-               <span className="text-[8px] font-mono text-slate-600 uppercase tracking-[4px]">Solar Sentinel // Siber_OS v1.0.1</span>
+              <span className="text-[8px] font-mono text-slate-600 uppercase tracking-[4px]">Solar Observer // Siber_OS v1.0.1</span>
             </div>
           </motion.div>
         </>

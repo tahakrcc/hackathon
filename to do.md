@@ -1,4 +1,4 @@
-# ☀️ Solar Sentinel — Proje Görev Listesi
+# ☀️ Solar Observer — Proje Görev Listesi
 
 > **Kural:** Her güncellemede ilgili kutuya `[x]` işareti atılacak.  
 > **Katmanlı Mimari:** Frontend → Controller → Service → Repository (Controller asla doğrudan Repository'ye erişmez)  

@@ -144,7 +144,7 @@ export const useSolarStore = create((set, get) => ({
     const ws = new WebSocket('ws://localhost:8080/ws/solar-feed');
     
     ws.onopen = () => {
-      console.log('[WS] Connected to Solar Sentinel Live Feed');
+      console.log('[WS] Connected to Solar Observer Live Feed');
       set({ wsConnected: true, error: null });
     };
 
