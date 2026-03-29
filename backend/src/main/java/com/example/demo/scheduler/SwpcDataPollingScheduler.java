@@ -13,6 +13,10 @@ import org.springframework.cache.CacheManager;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.example.demo.model.dto.*;
+import com.example.demo.config.SolarDataWebSocketHandler;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -25,6 +29,7 @@ public class SwpcDataPollingScheduler {
     private final SolarDataRepository solarDataRepository;
     private final RiskEventRepository riskEventRepository;
     private final CacheManager cacheManager;
+    private final SolarDataWebSocketHandler solarDataWebSocketHandler;
 
     private static final int RISK_THRESHOLD = 50;
 
@@ -52,7 +57,7 @@ public class SwpcDataPollingScheduler {
             List<SolarWindDto> wind = swpcDataService.getSolarWindPlasma();
             List<SolarMagDto> mag = swpcDataService.getSolarWindMag();
             List<KpIndexDto> kp = swpcDataService.getKpIndex();
-            swpcDataService.getAuroraData();
+            Object aurora = swpcDataService.getAuroraData();
 
             List<CmeEventDto> cme = List.of(); // CME cache ayrı, her dakika çekmek gereksiz
             try {
@@ -74,7 +79,29 @@ public class SwpcDataPollingScheduler {
                 log.warn("[ALARM] Risk seviyesi {}: {} (Skor: {})", level, description, score);
             }
 
-            log.info("[POLLING] Tamamlandı. Risk: {} ({})", score, level);
+            // 6. WebSocket'ten tüm istemcilere taze veriyi Push (Yayın) et
+            RiskScoreDto riskScoreDto = RiskScoreDto.builder()
+                    .score(score)
+                    .level(level)
+                    .description("Otonom sistem analiz sonucu")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            DashboardDto dashboard = DashboardDto.builder()
+                    .xrayFlux(xray)
+                    .solarWind(wind)
+                    .solarMag(mag)
+                    .kpIndex(kp)
+                    .auroraData(aurora)
+                    .cmeEvents(cme)
+                    // sunImage için ayrı bir çağrı yapabiliriz ama bu polling'i yavaşlatmamak için boş geçilebilir
+                    .riskScore(riskScoreDto)
+                    .lastUpdate(LocalDateTime.now())
+                    .build();
+
+            solarDataWebSocketHandler.broadcast(dashboard);
+
+            log.info("[POLLING] Tamamlandı. Risk: {} ({}) - WebSocket'e iletildi.", score, level);
         } catch (Exception e) {
             log.error("[POLLING] Güncelleme başarısız: {}", e.getMessage());
         }

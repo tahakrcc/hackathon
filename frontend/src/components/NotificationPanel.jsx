@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle, Activity, Zap, Clock, Bell } from 'lucide-react';
+import { X, AlertTriangle, Activity, Zap, Clock, Bell, Database } from 'lucide-react';
+import { fetchRiskEvents } from '../api/solarApi';
 
 const NotificationPanel = ({ isOpen, onClose, cmeEvents = [], riskScore = 0, lastUpdate }) => {
+  const [dbRiskEvents, setDbRiskEvents] = useState([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchRiskEvents().then(events => setDbRiskEvents(events || []));
+    }
+  }, [isOpen]);
   const getRiskColor = (i) => {
     if (i % 5 === 0) return 'magenta';
     if (i % 3 === 0) return 'yellow';
@@ -134,6 +142,41 @@ const NotificationPanel = ({ isOpen, onClose, cmeEvents = [], riskScore = 0, las
                 </div>
               )}
             </div>
+
+            {/* DB Risk Olayları */}
+            {dbRiskEvents.length > 0 && (
+              <div className="px-4 pb-4">
+                <div className="flex items-center gap-2 mb-3 px-2">
+                  <Database size={12} className="neon-text-yellow" />
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-[2px]">Alarm Geçmişi (DB)</span>
+                </div>
+                <div className="space-y-2">
+                  {dbRiskEvents.slice(0, 10).map((evt, i) => {
+                    const evtColor = evt.riskLevel === 'CRITICAL' ? '#ff003c' : (evt.riskLevel === 'HIGH_RISK' ? '#fbbf24' : '#00f3ff');
+                    const evtLabel = evt.riskLevel === 'CRITICAL' ? 'KRİTİK' : (evt.riskLevel === 'HIGH_RISK' ? 'YÜKSEK' : 'ORTA');
+                    return (
+                      <div key={i} className="p-3 bg-black/40 border border-white/5">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle size={10} style={{ color: evtColor }} />
+                            <span className="text-[9px] font-black" style={{ color: evtColor }}>{evtLabel}</span>
+                            <span className="text-[10px] font-bold text-slate-300 tabular-nums">Skor: {evt.riskScore}</span>
+                          </div>
+                          <span className="text-[8px] text-slate-600">{evt.triggerSource}</span>
+                        </div>
+                        <p className="text-[9px] text-slate-500">{evt.description}</p>
+                        <div className="flex items-center gap-1 mt-1 text-slate-600">
+                          <Clock size={8} />
+                          <span className="text-[8px] mono-info">
+                            {evt.triggeredAt ? new Date(evt.triggeredAt).toLocaleString('tr-TR') : '--'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Alt Bilgi */}
             <div className="px-6 py-3 border-t border-white/5 bg-black/40 flex justify-between items-center">

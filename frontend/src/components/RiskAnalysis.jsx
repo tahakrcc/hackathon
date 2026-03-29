@@ -1,9 +1,18 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, AlertTriangle, CheckCircle, Activity, Brain } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Activity, Brain, TrendingUp } from 'lucide-react';
+import { fetchHistory } from '../api/solarApi';
 
 const RiskAnalysis = ({ score, cmeEvents, aiAnalysis }) => {
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [riskTrend, setRiskTrend] = React.useState([]);
+
+  React.useEffect(() => {
+    fetchHistory(24).then(snapshots => {
+      const scores = (snapshots || []).map(s => s.riskScore).filter(s => s != null);
+      setRiskTrend(scores.slice(-30)); // Son 30 veri noktası
+    });
+  }, [score]); // score değişince yenile
   
   const reports = React.useMemo(() => [
     {
@@ -74,6 +83,24 @@ const RiskAnalysis = ({ score, cmeEvents, aiAnalysis }) => {
             <span className="text-[7px] tech-header text-slate-500 uppercase font-black">TEHDİT SEVİYESİ</span>
         </div>
       </div>
+
+      {/* 24 SAAT RİSK TRENDİ MİNİ GRAFİK */}
+      {riskTrend.length > 2 && (
+        <div className="px-2 py-2 bg-black/30 border border-white/5">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp size={10} className="neon-text-cyan opacity-40" />
+            <span className="text-[7px] tech-header text-slate-500 uppercase tracking-widest">24S_RİSK_TREND</span>
+          </div>
+          <svg viewBox={`0 0 ${riskTrend.length * 4} 24`} className="w-full h-6">
+            <polyline
+              fill="none"
+              stroke={score > 50 ? '#e11d48' : (score > 25 ? '#fbbf24' : '#38bdf8')}
+              strokeWidth="1.5"
+              points={riskTrend.map((v, i) => `${i * 4},${24 - (v / 100) * 24}`).join(' ')}
+            />
+          </svg>
+        </div>
+      )}
 
       {/* YAPAY ZEKA TEŞHİS TERMİNALİ */}
       <div className="flex-1 flex flex-col gap-3">

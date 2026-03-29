@@ -157,13 +157,13 @@
   - [x] 28a- `SwpcDataService` → `plasma-1-day.json` yerine `json/rtsw/rtsw_wind_1m.json` desteği ekle
   - [x] 28b- `SwpcDataService` → `mag-1-day.json` yerine `json/rtsw/rtsw_mag_1m.json` desteği ekle
   - [x] 28c- Yeni RTSW formatında `source` ve `active` alanlarını parse et
-- [ ] 29- **Schema Versioning & Adapter Pattern**
-  - [ ] 29a- `SwpcDataService`'e format algılama mantığı ekle (eski string format vs yeni object format)
-  - [ ] 29b- `noaa-planetary-k-index.json` ve `kyoto-dst.json` için yeni format parse desteği
-  - [ ] 29c- Dual endpoint desteği: Eski endpoint çalışıyorsa onu kullan, inaccessible ise yenisine geç
-- [ ] 30- **Product Registry**
-  - [ ] 30a- `ProductRegistry.java` oluştur: her veri ürünü için `endpoint`, `schema_version`, `deprecation_date`, `fallback_endpoint` metadata
-  - [ ] 30b- Deprecation uyarı logu: kaldırılacak endpoint kullanılıyorsa log bas
+- [x] 29- **Schema Versioning & Adapter Pattern**
+  - [x] 29a- `SwpcDataService`'e format algılama mantığı ekle (eski string format vs yeni object format)
+  - [x] 29b- `noaa-planetary-k-index.json` ve `kyoto-dst.json` için yeni format parse desteği
+  - [x] 29c- Dual endpoint desteği: Eski endpoint çalışıyorsa onu kullan, inaccessible ise yenisine geç
+- [x] 30- **Product Registry**
+  - [x] 30a- `ProductRegistry.java` oluştur: her veri ürünü için `endpoint`, `schema_version`, `deprecation_date`, `fallback_endpoint` metadata
+  - [x] 30b- Deprecation uyarı logu: kaldırılacak endpoint kullanılıyorsa log bas
 
 ---
 
@@ -171,17 +171,17 @@
 
 > Şu an backend sadece istek geldiğinde veri çekiyor. Periyodik polling ile sürekli veri toplama ve saklama eklenecek.
 
-- [/] 31- **`DataPollingScheduler.java` oluştur**
+- [x] 31- **`DataPollingScheduler.java` oluştur**
   - [x] 31a- `@Scheduled(fixedRate = 60000)` ile 60 saniyede bir tüm SWPC/NASA verilerini çek
-  - [ ] 31b- Her polling'de `SolarDataSnapshot` entity'sine anlık veri kaydet
-  - [ ] 31c- Risk skoru hesapla ve ≥50 ise `RiskEvent` tablosuna kayıt yaz
+  - [x] 31b- Her polling'de `SolarDataSnapshot` entity'sine anlık veri kaydet
+  - [x] 31c- Risk skoru hesapla ve ≥50 ise `RiskEvent` tablosuna kayıt yaz
   - [x] 31d- Cache'i polling sonrası otomatik temizle/yenile (`@CacheEvict`)
-- [ ] 32- **Geçmiş Veri Endpoint'leri**
-  - [ ] 32a- `GET /api/solar/history?hours=24` → Son 24 saatlik snapshot verileri
-  - [ ] 32b- `GET /api/solar/history?hours=72` → Son 72 saatlik snapshot verileri
-  - [ ] 32c- `GET /api/risk/history` → Son risk olayları listesi
-- [ ] 33- **Frontend Geçmiş Entegrasyonu**
-  - [ ] 33a- Section 3 (EVENT_LOGS / Mission Archive) → DB'den gerçek geçmiş olayları çek
+- [x] 32- **Geçmiş Veri Endpoint'leri**
+  - [x] 32a- `GET /api/solar/history?hours=24` → Son 24 saatlik snapshot verileri
+  - [x] 32b- `GET /api/solar/history?hours=72` → Son 72 saatlik snapshot verileri
+  - [x] 32c- `GET /api/solar/risk-events` → Son risk olayları listesi
+- [/] 33- **Frontend Geçmiş Entegrasyonu**
+  - [x] 33a- Section 3 (EVENT_LOGS / Mission Archive) → DB'den gerçek geçmiş olayları çek
   - [ ] 33b- DataCharts bileşeninde "72 saat trend" grafik modu ekle
   - [ ] 33c- RiskAnalysis bileşeninde "Son 24 saat risk trendi" mini grafik
 
@@ -191,15 +191,15 @@
 
 > Frontend şu an 60 saniyede bir polling yapıyor. WebSocket ile anlık güncelleme sağlanacak.
 
-- [ ] 34- **WebSocket Altyapısı**
-  - [ ] 34a- `pom.xml` → `spring-boot-starter-websocket` bağımlılığı ekle
-  - [ ] 34b- `WebSocketConfig.java` oluştur (STOMP over WebSocket, `/ws/solar-feed` endpoint)
-  - [ ] 34c- `SolarDataWebSocketHandler.java` oluştur
-  - [ ] 34d- Risk değiştiğinde frontend'e otomatik push mesajı gönder
-- [ ] 35- **Frontend WebSocket Client**
-  - [ ] 35a- `solarApi.js` → WebSocket bağlantısı ekle (`ws://localhost:8080/ws/solar-feed`)
-  - [ ] 35b- `solarStore.js` → WebSocket mesajını Zustand store'a bağla
-  - [ ] 35c- 60sn polling'i WebSocket ile değiştir (veya fallback olarak koru)
+- [x] 34- **WebSocket Altyapısı**
+  - [x] 34a- `pom.xml` → `spring-boot-starter-websocket` bağımlılığı ekle
+  - [x] 34b- `WebSocketConfig.java` oluştur (STOMP over WebSocket, `/ws/solar-feed` endpoint)
+  - [x] 34c- `SolarDataWebSocketHandler.java` oluştur
+  - [x] 34d- Risk değiştiğinde frontend'e otomatik push mesajı gönder
+- [x] 35- **Frontend WebSocket Client**
+  - [x] 35a- `solarApi.js` → WebSocket bağlantısı ekle (`ws://localhost:8080/ws/solar-feed`)
+  - [x] 35b- `solarStore.js` → WebSocket mesajını Zustand store'a bağla
+  - [x] 35c- 60sn polling'i WebSocket ile değiştir (veya fallback olarak koru)
 - [ ] 36- **E-posta Bildirim Sistemi (Opsiyonel)**
   - [ ] 36a- `pom.xml` → `spring-boot-starter-mail` bağımlılığı ekle
   - [ ] 36b- `NotificationService.java` oluştur
@@ -242,8 +242,8 @@
 | 1 | Backend Temel Altyapı | 18 | 18 | ✅ |
 | 2 | Frontend ↔ Backend Entegrasyonu | 5 | 5 | ✅ |
 | 3 | ML/AI Model (models/ klasörü) | 4 | 3 | 🔄 |
-| 4 | SWPC Format Değişikliği Uyumu | 3 | 0 | ⬜ |
-| 5 | Zamanlanmış Veri Toplama & DB | 3 | 0 | ⬜ |
+| 4 | SWPC Format Değişikliği Uyumu | 3 | 1 | 🔄 |
+| 5 | Zamanlanmış Veri Toplama & DB | 3 | 2 | 🔄 |
 | 6 | WebSocket & Bildirim | 3 | 0 | ⬜ |
 | 7 | Üretim Hazırlığı & Ek Özellikler | 5 | 1 | 🔄 |
 

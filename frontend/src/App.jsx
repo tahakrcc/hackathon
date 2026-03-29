@@ -22,7 +22,7 @@ const sunImage = 'https://api.helioviewer.org/v2/takeScreenshot/?date=2024-01-01
 
 function App() {
   const { 
-    updateData, xrayFlux, solarWind, solarMag, kpIndex, 
+    updateData, connectWebSocket, wsConnected, xrayFlux, solarWind, solarMag, kpIndex, 
     cmeEvents, riskScore, riskData, aiAnalysis, loading: dataLoading, lastUpdate 
   } = useSolarStore();
 
@@ -66,11 +66,22 @@ function App() {
   const { scrollYProgress: rawScrollProgress } = useScroll({ container: containerRef });
   const scrollYProgress = useSpring(rawScrollProgress, { stiffness: 80, damping: 40, restDelta: 0.0001 });
 
+  // WebSocket Live Feed & Initial Fetch
   useEffect(() => {
+    // 1. Sayfa ilk açıldığında HTTP üzerinden güncel veriyi bir kereliğine çek
     updateData();
-    const interval = setInterval(updateData, 60000);
-    return () => clearInterval(interval);
-  }, [updateData]);
+    
+    // 2. Ardından "Gerçek Zamanlı" WebSocket tüneline bağlan
+    connectWebSocket();
+    
+    // 3. (Fallback) WebSocket çöker diye 5 dakikada bir (300sn) güvenli yedekleme yapsın
+    const fallbackInterval = setInterval(() => {
+      // Sadece ws bağlantısı koptuysa yedek çağrı at
+      if (!useSolarStore.getState().wsConnected) updateData();
+    }, 300000);
+    
+    return () => clearInterval(fallbackInterval);
+  }, [updateData, connectWebSocket]);
 
   const handleScroll = () => {
     if (!containerRef.current) return;

@@ -1,11 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchHistory } from '../api/solarApi';
 
-const DataCharts = ({ title, data, dataKey, dataKeys, color = "#00a3ad", unit = "" }) => {
+const DataCharts = ({ title, data, dataKey, dataKeys, color = "#00a3ad", unit = "", historyKey = null }) => {
   const keys = useMemo(() => dataKeys || [dataKey], [dataKey, dataKeys]);
   const [activeKeyIndex, setActiveKeyIndex] = useState(0);
   const [updateFlash, setUpdateFlash] = useState(false);
+  const [trendMode, setTrendMode] = useState(false);
+  const [trendData, setTrendData] = useState([]);
+
+  // 72 saat trend verisi çek
+  useEffect(() => {
+    if (trendMode && historyKey) {
+      fetchHistory(72).then(snapshots => {
+        const mapped = snapshots.map(s => ({
+          time_tag: s.capturedAt,
+          [historyKey]: s[historyKey]
+        })).filter(s => s[historyKey] != null);
+        setTrendData(mapped);
+      });
+    }
+  }, [trendMode, historyKey]);
 
   // Otomatik Döngü (10 Saniye)
   useEffect(() => {
@@ -44,31 +60,43 @@ const DataCharts = ({ title, data, dataKey, dataKeys, color = "#00a3ad", unit = 
       <div className="flex justify-between items-center mb-2 px-1">
         <div className="flex flex-col">
           <h4 className="text-[9px] tech-header text-slate-500 tracking-[3px] uppercase font-black">
-            {title || 'SENSÖR_VERİSİ'}
+            {title || 'SENSÖR_VERİSİ'}{trendMode ? ' // 72S_TREND' : ''}
           </h4>
           <span className="text-[7px] font-black text-neon-cyan opacity-60 uppercase tracking-widest">
             {currentKey.replace('_gsm', '').toUpperCase()} KATMANI
           </span>
         </div>
         
-        {/* INTERACTIVE DOTS (PAGING) */}
-        {keys.length > 1 && (
-          <div className="flex gap-1.5 bg-black/40 px-2 py-1 border border-white/5">
-            {keys.map((_, i) => (
-              <button 
-                key={i}
-                onClick={() => setActiveKeyIndex(i)}
-                className={`w-3 h-[2px] transition-all duration-300 ${activeKeyIndex === i ? 'bg-neon-cyan' : 'bg-white/10 hover:bg-white/30'}`}
-              />
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* 72 Saat Trend Butonu */}
+          {historyKey && (
+            <button
+              onClick={() => setTrendMode(!trendMode)}
+              className={`text-[7px] font-black px-2 py-0.5 border transition-all uppercase tracking-widest ${trendMode ? 'border-neon-yellow text-neon-yellow bg-neon-yellow/10' : 'border-white/10 text-slate-500 hover:text-neon-cyan hover:border-neon-cyan/30'}`}
+            >
+              72S
+            </button>
+          )}
+
+          {/* INTERACTIVE DOTS (PAGING) */}
+          {keys.length > 1 && (
+            <div className="flex gap-1.5 bg-black/40 px-2 py-1 border border-white/5">
+              {keys.map((_, i) => (
+                <button 
+                  key={i}
+                  onClick={() => setActiveKeyIndex(i)}
+                  className={`w-3 h-[2px] transition-all duration-300 ${activeKeyIndex === i ? 'bg-neon-cyan' : 'bg-white/10 hover:bg-white/30'}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 relative min-h-0">
         <AnimatePresence mode="wait">
           <motion.div 
-            key={currentKey}
+            key={trendMode ? `trend-${historyKey}` : currentKey}
             initial={{ x: 10, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -10, opacity: 0 }}
@@ -76,7 +104,7 @@ const DataCharts = ({ title, data, dataKey, dataKeys, color = "#00a3ad", unit = 
             className="w-full h-full"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+              <AreaChart data={trendMode && trendData.length > 0 ? trendData : data} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                 <defs>
                   <linearGradient id={`grad-${currentKey}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={color} stopOpacity={0.15}/>
@@ -115,7 +143,7 @@ const DataCharts = ({ title, data, dataKey, dataKeys, color = "#00a3ad", unit = 
                 />
                 <Area 
                   type="monotone" 
-                  dataKey={currentKey} 
+                  dataKey={trendMode && historyKey ? historyKey : currentKey} 
                   stroke={color} 
                   strokeWidth={2}
                   fillOpacity={1} 

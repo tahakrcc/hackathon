@@ -101,3 +101,25 @@ export const fetchAiPrediction = async () => {
     return null;
   }
 };
+
+// === Phase 5: Geçmiş Veri Fonksiyonları ===
+
+export const fetchHistory = async (hours = 24) => {
+  try {
+    const response = await axios.get(`/api/solar/history?hours=${hours}`);
+    return extractArray(response.data);
+  } catch (error) {
+    console.error('Error fetching history from backend:', error);
+    return [];
+  }
+};
+
+export const fetchRiskEvents = async () => {
+  try {
+    const response = await axios.get('/api/solar/risk-events');
+    return extractArray(response.data);
+  } catch (error) {
+    console.error('Error fetching risk events from backend:', error);
+    return [];
+  }
+};
