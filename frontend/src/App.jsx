@@ -15,6 +15,8 @@ import CyberCard from './components/CyberCard';
 import WebGLErrorBoundary from './components/WebGLErrorBoundary';
 import NotificationPanel from './components/NotificationPanel';
 import SettingsPanel from './components/SettingsPanel';
+import GeospaceObserver from './components/GeospaceObserver';
+import EmergencyAlert from './components/EmergencyAlert';
 import { fetchHelioviewerImage } from './api/solarApi';
 
 // Fallback constant for sun image
@@ -23,7 +25,7 @@ const sunImage = 'https://api.helioviewer.org/v2/takeScreenshot/?date=2024-01-01
 function App() {
   const {
     updateData, connectWebSocket, wsConnected, xrayFlux, solarWind, solarMag, kpIndex,
-    cmeEvents, riskScore, riskData, aiAnalysis, loading: dataLoading, lastUpdate
+    cmeEvents, riskScore, riskData, aiAnalysis, satelliteData, loading: dataLoading, lastUpdate
   } = useSolarStore();
 
   // === GERÇEK VERİ HESAPLAMALARI ===
@@ -35,9 +37,17 @@ function App() {
 
   const [activeSection, setActiveSection] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
+  const [lastSeenCount, setLastSeenCount] = useState(0);
   const [selectedEventIndex, setSelectedEventIndex] = useState(0);
   const [selectedEventImage, setSelectedEventImage] = useState(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  
+  // İlk veri geldiğinde lastSeenCount'u eşitle (10 sayısını başlangıçta göstermemek için)
+  useEffect(() => {
+    if (safeCmeEvents.length > 0 && lastSeenCount === 0) {
+      setLastSeenCount(safeCmeEvents.length);
+    }
+  }, [safeCmeEvents, lastSeenCount]);
 
   // Arşiv olayı değiştiğinde resim çek
   useEffect(() => {
@@ -226,7 +236,14 @@ function App() {
                 <span className="text-[10px] tech-header neon-text-cyan animate-pulse">AĞ: GÜVENLİ</span>
                 <span className="text-[8px] mono-info text-slate-400">DÜĞÜM: #CX-029</span>
               </div>
-              <IconButton icon={Bell} badge={safeCmeEvents.length} onClick={() => setShowNotifications(true)} />
+               <IconButton 
+                 icon={Bell} 
+                 badge={Math.max(0, safeCmeEvents.length - lastSeenCount)} 
+                 onClick={() => {
+                   setShowNotifications(true);
+                   setLastSeenCount(safeCmeEvents.length);
+                 }} 
+               />
               <IconButton icon={Settings} onClick={() => setShowSettings(true)} />
             </div>
           </nav>
@@ -592,47 +609,22 @@ function App() {
             </section>
 
             {/* ═══════════════ BÖLÜM 3: GEOSPACE OBSERVER ═══════════════ */}
-            <section className="snap-section pt-10 pb-8">
-               <div className="section-content !max-w-[1200px] !pb-10">
-                  <div className="flex justify-between items-end mb-4 border-b border-neon-cyan/20 pb-3">
-                     <div className="flex items-center gap-4">
-                        <div className="w-4 h-4 bg-neon-cyan" />
-                        <h2 className="text-3xl font-black neon-text-cyan uppercase tracking-widest leading-none">Geospace Observer</h2>
-                     </div>
-                     <div className="flex items-center gap-4 text-slate-500 tech-header">
-                        <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-pulse shadow-neon-cyan" />
-                           <span className="text-[9px]">BAĞLANTI: CANLI_NASA_FEED</span>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="flex-1 bg-black/80 border border-white/10 rounded-xl overflow-hidden relative group shadow-[0_0_50px_rgba(0,0,0,0.8)] border-neon-cyan/20">
-                     <iframe 
-                        src="https://eyes.nasa.gov/apps/solar-system/#/earth?embed=true" 
-                        className="w-full h-full border-none opacity-90 group-hover:opacity-100 transition-opacity duration-700 pointer-events-auto" 
-                        title="NASA Geospace Earth Orbit"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        loading="lazy"
-                     />
-                     
-                     <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/90 to-transparent pointer-events-none">
-                        <div className="flex justify-between items-center text-[8px] tech-header text-slate-500 italic">
-                           <div className="flex items-center gap-4">
-                              <span>© NASA SOLAR SYSTEM EYES</span>
-                              <div className="w-[1px] h-2 bg-white/20" />
-                              <span>GEOSPACIAL_DOMAIN_MONITOR</span>
-                           </div>
-                           <span className="neon-text-cyan">L1_ORBIT_PERSPECTIVE</span>
-                        </div>
-                     </div>
-                  </div>
-               </div>
+            <section id="geospace" className="snap-start min-h-screen relative flex items-center justify-center p-4 md:p-8 overflow-hidden bg-black/80">
+                <div className="w-full max-w-[1700px] h-[86vh] relative z-20">
+                   <GeospaceObserver satellites={satelliteData} />
+                </div>
+                
+                {/* ARKA PLAN DEKORATİF ÖĞELER */}
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-20">
+                   <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full" />
+                   <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+                </div>
             </section>
           </main>
 
           <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} cmeEvents={safeCmeEvents} riskScore={riskScore} lastUpdate={lastUpdate} />
           <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} onRefreshData={updateData} />
+          <EmergencyAlert />
         </>
       )}
     </div>

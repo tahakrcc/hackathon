@@ -139,22 +139,7 @@ const Earth3D = ({ riskScore = 20, bz = 0, bt = 0 }) => {
         <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.4} />
       </Canvas>
 
-      {/* TAKTİK HUD KATMANI - Sadece Nişangah Korundu */}
-      <div className="absolute inset-0 pointer-events-none z-10 p-6 flex items-center justify-center">
-        {/* Hedefleme Nişangahı */}
-        <div className="relative w-80 h-80 border border-white/5 rounded-full">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-            className="absolute inset-0 border-t-2 border-solar-amber/30 rounded-full"
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-            className="absolute inset-[10px] border-b border-neon-cyan/20 rounded-full"
-          />
-        </div>
-      </div>
+      {/* TAKTİK HUD KATMANI KALDIRILDI */}
     </div>
   );
 };

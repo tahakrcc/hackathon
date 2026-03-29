@@ -123,3 +123,13 @@ export const fetchRiskEvents = async () => {
     return [];
   }
 };
+
+export const fetchSatelliteRisks = async () => {
+  try {
+    const response = await axios.get('/api/satellite/risk');
+    return extractArray(response.data);
+  } catch (error) {
+    console.error('Error fetching satellite risks from backend:', error);
+    return [];
+  }
+};
