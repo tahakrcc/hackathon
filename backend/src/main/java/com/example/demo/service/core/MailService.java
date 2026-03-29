@@ -1,5 +1,7 @@
 package com.example.demo.service.core;
 
+import com.example.demo.model.entity.RecipientMail;
+import com.example.demo.repository.RecipientMailRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +19,27 @@ import java.util.List;
 public class MailService {
 
     private final JavaMailSender mailSender;
+    private final RecipientMailRepository recipientMailRepository;
+
+    public List<String> getAllRecipients() {
+        return recipientMailRepository.findAll().stream()
+                .map(RecipientMail::getEmail)
+                .toList();
+    }
+
+    @Transactional
+    public void addRecipient(String email) {
+        if (recipientMailRepository.findByEmail(email).isEmpty()) {
+            recipientMailRepository.save(new RecipientMail(email));
+            log.info("[MAIL_DB] Yeni alıcı kaydedildi: {}", email);
+        }
+    }
+
+    @Transactional
+    public void removeRecipient(String email) {
+        recipientMailRepository.deleteByEmail(email);
+        log.info("[MAIL_DB] Alıcı silindi: {}", email);
+    }
 
     public void sendEmergencyAlert(List<String> recipients, String intensity, String aiComment, String impactTime) {
         if (recipients == null || recipients.isEmpty()) {

@@ -30,25 +30,45 @@ export const useSolarStore = create((set, get) => ({
   lastUpdate: null,
   wsConnected: false,
 
-  // Mail & Alıcı Yönetimi
-  recipientMails: ['gunesgozlemcisi@gmail.com'], 
+  // Mail & Alıcı Yönetimi (DB Senkronize)
+  recipientMails: [], 
 
   // Alarm Simülasyon Durumu
   alertState: { active: false, countdown: 0, data: null },
 
-  addRecipientMail: (mail) => {
-    const current = get().recipientMails;
-    if (mail && !current.includes(mail) && mail.includes('@')) {
-      set({ recipientMails: [...current, mail] });
+  fetchRecipients: async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/mail/recipients');
+      set({ recipientMails: response.data || [] });
+    } catch (err) {
+      console.error('[MAIL_DB] Alıcılar çekilemedi:', err);
     }
   },
 
-  removeRecipientMail: (mail) => {
-    set({ recipientMails: get().recipientMails.filter(m => m !== mail) });
+  addRecipientMail: async (mail) => {
+    const current = get().recipientMails;
+    if (mail && !current.includes(mail) && mail.includes('@')) {
+      try {
+        await axios.post('http://localhost:8080/api/mail/recipients', mail, {
+          headers: { 'Content-Type': 'text/plain' }
+        });
+        set({ recipientMails: [...current, mail] });
+      } catch (err) {
+        console.error('[MAIL_DB] Alıcı eklenemedi:', err);
+      }
+    }
+  },
+
+  removeRecipientMail: async (mail) => {
+    try {
+      await axios.delete(`http://localhost:8080/api/mail/recipients?email=${mail}`);
+      set({ recipientMails: get().recipientMails.filter(m => m !== mail) });
+    } catch (err) {
+      console.error('[MAIL_DB] Alıcı silinemedi:', err);
+    }
   },
 
   triggerAlertSimulation: () => {
-    console.log('[ALERT] Simülasyon geri sayımı başlatıldı...');
     set({ alertState: { active: false, countdown: 3, data: null } });
     
     const timer = setInterval(() => {
@@ -66,7 +86,6 @@ export const useSolarStore = create((set, get) => ({
             affectedSystems: "GPS, Iridium, Global Power Grids"
           };
 
-          console.log('[ALERT] Alarm aktif edildi! Mail gönderimi tetikleniyor...');
           get().sendAlertMail(alertData);
 
           return { 
@@ -83,26 +102,18 @@ export const useSolarStore = create((set, get) => ({
 
   sendAlertMail: async (alertData) => {
     const mails = get().recipientMails;
-    if (mails.length === 0) {
-      console.warn('[MAIL] Alıcı listesi boş, mail gönderilmedi.');
-      return;
-    }
-
-    console.log('[MAIL] API isteği hazırlanıyor. Alıcılar:', mails);
+    if (mails.length === 0) return;
 
     try {
-      const response = await axios.post('http://localhost:8080/api/mail/send-alert', {
+      await axios.post('http://localhost:8080/api/mail/send-alert', {
         recipients: mails,
         intensity: alertData.intensity,
         aiComment: alertData.aiComment,
         impactTime: alertData.impactTime
       });
-      console.log('[MAIL] Sunucu yanıtı:', response.data);
+      console.log('[MAIL] Alert mail sent successfully to:', mails);
     } catch (err) {
-      console.error('[MAIL] Gönderim Hatası:', err.response?.data || err.message);
-      if (err.message === 'Network Error') {
-        console.error('[MAIL] Backend (8080) kapalı olabilir veya CORS hatası.');
-      }
+      console.error('[MAIL] Failed to send alert email:', err);
     }
   },
 

@@ -25,7 +25,8 @@ const sunImage = 'https://api.helioviewer.org/v2/takeScreenshot/?date=2024-01-01
 function App() {
   const {
     updateData, connectWebSocket, wsConnected, xrayFlux, solarWind, solarMag, kpIndex,
-    cmeEvents, riskScore, riskData, aiAnalysis, satelliteData, loading: dataLoading, lastUpdate
+    cmeEvents, riskScore, riskData, aiAnalysis, satelliteData, loading: dataLoading, lastUpdate,
+    alertState, fetchRecipients
   } = useSolarStore();
 
   // === GERÇEK VERİ HESAPLAMALARI ===

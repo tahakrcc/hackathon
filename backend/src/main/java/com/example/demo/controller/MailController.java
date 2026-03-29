@@ -15,6 +15,23 @@ public class MailController {
 
     private final MailService mailService;
 
+    @GetMapping("/recipients")
+    public List<String> getRecipients() {
+        return mailService.getAllRecipients();
+    }
+
+    @PostMapping("/recipients")
+    public String addRecipient(@RequestBody String email) {
+        mailService.addRecipient(email);
+        return "Recipient added: " + email;
+    }
+
+    @DeleteMapping("/recipients")
+    public String removeRecipient(@RequestParam String email) {
+        mailService.removeRecipient(email);
+        return "Recipient removed: " + email;
+    }
+
     @PostMapping("/send-alert")
     public String sendAlert(@RequestBody AlertMailRequest request) {
         mailService.sendEmergencyAlert(
