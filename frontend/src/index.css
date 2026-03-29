@@ -94,12 +94,16 @@
   /* PAGE TRANSITIONS & SNAPS */
   .snap-container {
     @apply h-screen overflow-y-auto relative z-10;
+    scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
   }
   .snap-container::-webkit-scrollbar { display: none; }
+  .snap-container { -ms-overflow-style: none; scrollbar-width: none; }
 
   .snap-section {
-    @apply min-h-screen w-full relative overflow-hidden flex flex-col;
+    @apply h-screen w-full relative overflow-hidden flex flex-col;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 
   .section-content {

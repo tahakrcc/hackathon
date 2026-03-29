@@ -65,7 +65,7 @@ const NotificationPanel = ({ isOpen, onClose, cmeEvents = [], riskScore = 0, las
                   <p className="text-[8px] tech-header text-slate-500 mt-1">{cmeEvents.length} AKTİF UYARI</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={onClose}
                 className="p-2 text-slate-400 hover:text-neon-magenta transition-colors border border-white/5 hover:border-neon-magenta/30"
               >
@@ -101,44 +101,48 @@ const NotificationPanel = ({ isOpen, onClose, cmeEvents = [], riskScore = 0, las
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
-                  {cmeEvents.slice(0, 15).map((evt, i) => {
-                    const color = getRiskColor(i);
-                    const hexColor = color === 'magenta' ? '#ff003c' : (color === 'yellow' ? '#fcee0a' : '#00f3ff');
-                    
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ x: 20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="p-4 bg-black/40 border border-white/5 hover:border-neon-cyan/30 transition-all group cursor-pointer"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1 p-1.5" style={{ border: `1px solid ${hexColor}30`, background: `${hexColor}10` }}>
-                            {color === 'magenta' ? <AlertTriangle size={14} style={{ color: hexColor }} /> : <Zap size={14} style={{ color: hexColor }} />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-bold text-slate-200">{evt.activityID}</span>
-                              <span 
-                                className="text-[7px] font-black uppercase px-2 py-[2px]"
-                                style={{ background: `${hexColor}20`, color: hexColor }}
-                              >
-                                {getRiskLabel(color)}
-                              </span>
+                  {/* Live CME Events - Sorted by Time (Newest First) */}
+                  {[...cmeEvents]
+                    .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
+                    .slice(0, 15)
+                    .map((evt, i) => {
+                      const color = getRiskColor(i);
+                      const hexColor = color === 'magenta' ? '#ff003c' : (color === 'yellow' ? '#fcee0a' : '#00f3ff');
+
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{ x: 20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="p-4 bg-black/40 border border-white/5 hover:border-neon-cyan/30 transition-all group cursor-pointer"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1 p-1.5" style={{ border: `1px solid ${hexColor}30`, background: `${hexColor}10` }}>
+                              {color === 'magenta' ? <AlertTriangle size={14} style={{ color: hexColor }} /> : <Zap size={14} style={{ color: hexColor }} />}
                             </div>
-                            <p className="text-[10px] text-slate-400 leading-relaxed mb-2">
-                              {evt.note ? evt.note.substring(0, 120) + '...' : 'Koronal kütle atımı tespit edildi. Jeomanyetik etki analizi devam ediyor.'}
-                            </p>
-                            <div className="flex items-center gap-2 text-slate-600">
-                              <Clock size={10} />
-                              <span className="text-[9px] mono-info">{formatTime(evt.startTime)}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-bold text-slate-200">{evt.activityID}</span>
+                                <span
+                                  className="text-[7px] font-black uppercase px-2 py-[2px]"
+                                  style={{ background: `${hexColor}20`, color: hexColor }}
+                                >
+                                  {getRiskLabel(color)}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-400 leading-relaxed mb-2">
+                                {evt.note ? evt.note.substring(0, 120) + '...' : 'Koronal kütle atımı tespit edildi. Jeomanyetik etki analizi devam ediyor.'}
+                              </p>
+                              <div className="flex items-center gap-2 text-slate-600">
+                                <Clock size={10} />
+                                <span className="text-[9px] mono-info">{formatTime(evt.startTime)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                        </motion.div>
+                      );
+                    })}
                 </div>
               )}
             </div>
@@ -184,7 +188,7 @@ const NotificationPanel = ({ isOpen, onClose, cmeEvents = [], riskScore = 0, las
                 SON GÜNCELLEME: {lastUpdate ? new Date(lastUpdate).toLocaleTimeString('tr-TR') : '--:--'}
               </span>
               <div className="flex gap-1">
-                {[1,2,3].map(i => (
+                {[1, 2, 3].map(i => (
                   <div key={i} className="w-1.5 h-1.5 bg-neon-cyan/60" />
                 ))}
               </div>
